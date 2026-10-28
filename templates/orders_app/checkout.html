@@ -1,0 +1,168 @@
+{% extends "main_template.html" %}
+{% load render_partial %}
+{% load humanize %}
+
+{% block title %}
+فاکتور سفارش
+{% endblock title %}
+
+{% block content %}
+<div class="site__body">
+    <div class="page-header">
+        <div class="page-header__container container">
+            <div class="page-header__breadcrumb">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'main:index' %}">خانه</a>
+                            /
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">پرداخت</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="page-header__title">
+                <h1>پرداخت</h1>
+            </div>
+        </div>
+    </div>
+    <div class="checkout block">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <div class="alert alert-lg alert-primary">حساب کاربری دارید؟ <a href="{% url 'accounts:login' %}"> وارد حساب خود شوید</a></div>
+                </div>
+                <div class="col-12 col-lg-6 col-xl-7">
+                    <div class="card mb-lg-0">
+                        <form id="checkout-form" action="{% url "orders:checkout_order" order_id=order.id %}" method="post">
+                            <div class="card-body">
+                                <h3 class="card-title">جزئیات پرداخت</h3>
+
+                                {% csrf_token %}
+                                {% if form.errors %}
+                                    <div class="alert alert-danger">
+                                        {% for field in form %}{% for error in field.errors %}<div>{{ error }}</div>{% endfor %}{% endfor %}
+                                        {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+                                    </div>
+                                {% endif %}
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="checkout-first-name">نام</label>
+                                        {{form.name}}
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="checkout-last-name">نام خانوادگی</label>
+                                        {{form.family}}
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="checkout-street-address">آدرس</label>
+                                    {{form.address}}
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="checkout-email">آدرس ایمیل</label>
+                                        {{form.email}}
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="checkout-phone">تلفن</label>
+                                        {{form.phone_number}}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-divider"></div>
+                            <div class="card-body">
+                                <h3 class="card-title">جزئیات حمل و نقل</h3>
+                                <div class="form-group">
+                                    <label for="checkout-comment">توضیحات سفارش <span class="text-muted">(اختیاری)</span></label>
+                                    {{form.description}}
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6 col-xl-5 mt-4 mt-lg-0">
+                    <div class="card mb-0">
+                        <div class="card-body">
+                            <h3 class="card-title">سفارش شما</h3>
+                            <table class="checkout__totals">
+                                <thead class="checkout__totals-header">
+                                    <tr>
+                                        <th>محصول</th>
+                                        <th>جمع کل</th>
+                                        <th>تعداد</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="checkout__totals-products">
+                                    {% for item in shop_cart %}
+                                        <tr>
+                                            <td>
+                                                {{ item.store_product.product.product_name }}
+                                                <br>
+                                                <small>
+                                                    فروشگاه:
+                                                    {{ item.store_product.store.store_name }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                {{ item.total_price|intcomma }}
+                                            </td>
+                                            <td>
+                                                {{ item.qty }}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tbody class="checkout__totals-subtotals">
+                                    <tr>
+                                        <th colspan="2">جمع جزء</th>
+                                        <td>{{total_price|intcomma}} تومان</td>
+                                    </tr>
+                                    {% if order.discount %}
+                                        <tr>
+                                            <th colspan="2">تخفیف</th>
+                                            <td>{{ order.discount }}٪</td>
+                                        </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <th colspan="2">حمل و نقل</th>
+                                        <td>{{delivery|intcomma}} تومان</td>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2">مالیات</th>
+                                        <td>{{tax|intcomma}} تومان</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr style="color:green; font-weight: 900;">
+                                        <td>جمع کل</td>
+                                        <td colspan="2">{{order_final_price|intcomma}} تومان</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                            <form action="{% url "orders:applay_coupon" order_id=order.id %}" method="post" style="display: flex; justify-content: center;">
+                                {% csrf_token %}
+                                {{form_coupon}}
+                                <button type="submit" class="btn btn-primary">اعمال کد تخفیف</button>
+                            </form>
+
+                            <div class="payment-methods">
+                                <h6 class="mb-3">روش پرداخت</h6>
+                                {% for radio in form.payment_type %}
+                                    <div class="form-check mb-2">
+                                        <label class="form-check-label">{{ radio.tag }} {{ radio.choice_label }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <button type="submit" form="checkout-form" class="btn btn-primary btn-xl btn-block">ثبت سفارش</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

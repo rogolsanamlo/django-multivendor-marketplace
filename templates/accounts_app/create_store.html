@@ -1,0 +1,105 @@
+{% extends "seller_panel_template.html" %}
+
+{% block title %}
+ایجاد فروشگاه
+{% endblock title %}
+
+{% block content %}
+
+<div class="dashboard">
+
+    <div class="card">
+
+        <div class="card-header">
+            <h5>ایجاد فروشگاه</h5>
+        </div>
+
+        <div class="card-divider"></div>
+
+        <div class="card-body">
+
+            <form method="post" enctype="multipart/form-data">
+
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="form-group">
+                    {{ form.store_name.label_tag }}
+                    {{ form.store_name }}
+
+                    {% if form.store_name.errors %}
+                        <div class="text-danger">
+                            {{ form.store_name.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.store_phone.label_tag }}
+                    {{ form.store_phone }}
+
+                    {% if form.store_phone.errors %}
+                        <div class="text-danger">
+                            {{ form.store_phone.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.address.label_tag }}
+                    {{ form.address }}
+
+                    {% if form.address.errors %}
+                        <div class="text-danger">
+                            {{ form.address.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.description.label_tag }}
+                    {{ form.description }}
+
+                    {% if form.description.errors %}
+                        <div class="text-danger">
+                            {{ form.description.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.logo.label_tag }}
+                    {{ form.logo }}
+
+                    {% if form.logo.errors %}
+                        <div class="text-danger">
+                            {{ form.logo.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    ایجاد فروشگاه
+                </button>
+
+                <a
+                    href="{% url 'accounts:userpanel' %}"
+                    class="btn btn-secondary mr-2"
+                >
+                    انصراف
+                </a>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock content %}

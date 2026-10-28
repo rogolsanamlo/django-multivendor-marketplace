@@ -1,0 +1,15 @@
+<svg width="206" height="96" viewBox="0 0 206 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shopping Cart Icon -->
+  <g transform="translate(-5,5) scale(0.44)" stroke="#FF9800" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="40" cy="150" r="14" fill="#FF9800" stroke="none"/>
+    <circle cx="120" cy="150" r="14" fill="#FF9800" stroke="none"/>
+    <path d="M20 20H40L52 100H132L150 52H58"/>
+    <path d="M52 100H134"/>
+    <path d="M64 100L58 52"/>
+    <path d="M82 100L80 52"/>
+    <path d="M100 100L102 52"/>
+  </g>
+
+  <!-- Brand Text (anchored to the right edge so it never leaves empty space) -->
+  <text x="204" y="61" text-anchor="end" font-size="38" font-family="Vazirmatn, IRANSans, Tahoma, Arial, sans-serif" font-weight="800" fill="#111827">بازارک</text>
+</svg>

@@ -1,0 +1,394 @@
+{% extends "seller_panel_template.html" %}
+{% load humanize %}
+
+{% block title %}
+داشبورد تحلیل فروش
+{% endblock title %}
+
+{% block content %}
+
+<div class="dashboard">
+
+    <div class="card">
+        <div class="card-body">
+
+            <h4>پرفروش‌ترین محصولات</h4>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>محصول</th>
+                        <th>تعداد فروش</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in top_products %}
+                        <tr>
+                            <td>{{ item.store_product__product__product_name }}</td>
+                            <td>{{ item.total_sales }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+<div class="card mt-4">
+    <div class="card-body">
+
+        <h4>پرفروش‌ترین گروه‌ها</h4>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>گروه</th>
+                    <th>تعداد فروش</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in top_categories %}
+                    <tr>
+                        <td>{{ item.store_product__product__product_group__group_title }}</td>
+                        <td>{{ item.total_sales }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-body">
+
+        <h4>نمودار فروش روزانه</h4>
+
+        <canvas id="dailyChart"></canvas>
+
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-body">
+
+        <h4>محصولات بدون فروش</h4>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>نام محصول</th>
+                    <th>قیمت</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in products_without_sales %}
+                    <tr>
+                        <td>{{ item.product.product_name }}</td>
+                        <td>{{ item.price }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="2">
+                            {% if active_products_count %}همه محصولات حداقل یک فروش داشته‌اند.{% else %}هنوز کالایی به فروشگاه شما اضافه نشده است.{% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-body">
+
+        <h4>محصولات رو به اتمام</h4>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>محصول</th>
+                    <th>موجودی</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in low_stock_products %}
+                    <tr>
+                        <td>{{ item.store_product.product.product_name }}</td>
+                        <td>{{ item.qty }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="2">محصولی با موجودی کم وجود ندارد.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-body">
+
+        <h4>درآمد ماهانه</h4>
+
+        <canvas id="incomeChart"></canvas>
+
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-body">
+
+        <h4>فروش بر اساس گروه کالا</h4>
+
+        <canvas id="groupChart"></canvas>
+
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">تعداد سفارش‌های نهایی</div>
+    <div class="card-body">
+        <h3>{{ orders_count }}</h3>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">تعداد کالاهای فعال</div>
+    <div class="card-body">
+        <h3>{{ active_products_count }}</h3>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">کالاهای دارای موجودی</div>
+    <div class="card-body">
+        <h3>{{ available_products_count }}</h3>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">گزارش سود فروشگاه</div>
+    <div class="card-body">
+
+        <p>
+            فروش کل:
+            {{ profit.sell|intcomma }}
+            تومان
+        </p>
+
+        <p>
+            هزینه خرید:
+            {{ profit.buy|intcomma }}
+            تومان
+        </p>
+
+        <hr>
+
+        <h4>
+            سود:
+            {{ profit.profit|intcomma }}
+            تومان
+        </h4>
+
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">آخرین سفارش‌ها</div>
+    <div class="card-body">
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>محصول</th>
+                    <th>تعداد</th>
+                    <th>قیمت واحد</th>
+                    <th>تاریخ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in last_orders %}
+                    {% for detail in order.details.all %}
+                        <tr>
+                            <td>{{ detail.store_product.product.product_name }}</td>
+                            <td>{{ detail.qty }}</td>
+                            <td>{{ detail.price|intcomma }} تومان</td>
+                            <td>{{ order.register_date|date:"Y/m/d" }}</td>
+                        </tr>
+                    {% endfor %}
+                {% empty %}
+                    <tr>
+                        <td colspan="4">هنوز سفارشی ثبت نشده است.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">مشتریان برتر</div>
+    <div class="card-body">
+
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>نام مشتری</th>
+                    <th>تعداد سفارش</th>
+                    <th>مبلغ خرید</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in top_customers %}
+                    <tr>
+                        <td>
+                            {{ item.order__customer__user__name }}
+                            {{ item.order__customer__user__family }}
+                        </td>
+                        <td>{{ item.total_orders }}</td>
+                        <td>
+                            {{ item.total_amount|intcomma }}
+                            تومان
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">فروش ۷ روز اخیر</div>
+    <div class="card-body">
+        <canvas id="weekChart"></canvas>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">مشتریان جدید این ماه</div>
+    <div class="card-body text-center">
+        <h2>{{ new_customers }}</h2>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">میانگین مبلغ هر خرید</div>
+    <div class="card-body text-center">
+        <h2>{{ average_order|intcomma }}</h2>
+        <small>تومان</small>
+    </div>
+</div>
+
+<div class="mt-4">
+
+    <a href="{% url 'analytics:reports' %}"
+       class="btn btn-primary">
+        📊 گزارش کامل
+    </a>
+
+    <a href="{% url 'analytics:export_pdf' %}"
+       class="btn btn-danger">
+        📄 دانلود PDF
+    </a>
+
+    <a href="{% url 'analytics:export_excel' %}"
+       class="btn btn-success">
+        📗 دانلود Excel
+    </a>
+
+</div>
+
+
+<!-- نمودار فروش روزانه -->
+<script>
+    const dailyLabels = {{ daily_labels|safe }};
+    const dailyValues = {{ daily_values|safe }};
+
+    new Chart(
+        document.getElementById("dailyChart"),
+        {
+            type: "line",
+            data: {
+                labels: dailyLabels,
+                datasets: [{
+                    label: "فروش روزانه",
+                    data: dailyValues,
+                    borderWidth: 3,
+                    fill: false,
+                }]
+            }
+        }
+    );
+</script>
+
+<!-- نمودار درآمد ماهانه -->
+<script>
+    const monthLabels = {{ month_labels|safe }};
+    const monthValues = {{ month_values|safe }};
+
+    new Chart(
+        document.getElementById("incomeChart"),
+        {
+            type: "bar",
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: "درآمد",
+                    data: monthValues,
+                    borderWidth: 2,
+                }]
+            }
+        }
+    );
+</script>
+
+<!-- نمودار فروش بر اساس گروه کالا -->
+<script>
+    const groupLabels = {{ group_labels|safe }};
+    const groupValues = {{ group_values|safe }};
+
+    new Chart(
+        document.getElementById("groupChart"),
+        {
+            type: "pie",
+            data: {
+                labels: groupLabels,
+                datasets: [{
+                    data: groupValues,
+                }]
+            }
+        }
+    );
+</script>
+
+<!-- نمودار فروش ۷ روز اخیر -->
+<script>
+    const weekLabels = {{ week_labels|safe }};
+    const weekValues = {{ week_values|safe }};
+
+    new Chart(
+        document.getElementById("weekChart"),
+        {
+            type: "line",
+            data: {
+                labels: weekLabels,
+                datasets: [{
+                    label: "فروش ۷ روز اخیر",
+                    data: weekValues,
+                    borderWidth: 3,
+                    fill: false,
+                }]
+            }
+        }
+    );
+</script>
+
+{% endblock content %}

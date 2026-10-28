@@ -1,0 +1,49 @@
+{% extends "seller_panel_template.html" %}
+{% load humanize %}
+
+{% block title %}
+سفارشات فروشگاه
+{% endblock title %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="card">
+        <div class="card-header">
+            <h5>سفارشات فروشگاه</h5>
+        </div>
+        <div class="card-divider"></div>
+        <div class="card-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>سفارش</th>
+                        <th>تاریخ</th>
+                        <th>مشتری</th>
+                        <th>اقلام</th>
+                        <th>جمع کالاها (تومان)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        <tr>
+                            <td>#{{ order.id }}</td>
+                            <td>{{ order.register_date|date:"Y/m/d" }}</td>
+                            <td>{{ order.customer.user.name }} {{ order.customer.user.family }}</td>
+                            <td>
+                                {% for detail in order.details.all %}
+                                    {{ detail.store_product.product.product_name }} × {{ detail.qty }}{% if not forloop.last %}<br>{% endif %}
+                                {% endfor %}
+                            </td>
+                            <td>{{ order.items_total|intcomma }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5">هنوز سفارشی ثبت نشده است.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}

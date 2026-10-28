@@ -1,0 +1,91 @@
+{% extends "main_template.html" %}
+{% load static %}
+{% load render_partial %}
+
+{% block title %}
+فروشگاه
+{% endblock title %}
+
+{% block content %}
+
+<div class="site__body">
+    <div class="page-header">
+        <div class="page-header__container container">
+            <div class="page-header__breadcrumb">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'main:index' %}">خانه</a>
+                            /
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">علاقه‌مندی‌ها</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="page-header__title">
+                <h1>علاقه‌مندی‌ها</h1>
+            </div>
+        </div>
+    </div>
+    <div class="block">
+        <div class="container">
+            <table class="wishlist">
+                <thead class="wishlist__head">
+                    <tr class="wishlist__row">
+                        <th class="wishlist__column wishlist__column--image">تصویر</th>
+                        <th class="wishlist__column wishlist__column--product">محصول</th>
+                        <th class="wishlist__column wishlist__column--stock">وضعیت انبار</th>
+                        <th class="wishlist__column wishlist__column--price">قیمت</th>
+                        <th class="wishlist__column wishlist__column--tocart"></th>
+                        <th class="wishlist__column wishlist__column--remove"></th>
+                    </tr>
+                </thead>
+                <tbody class="wishlist__body">
+                    {% for favorite in user_favorite_products %}
+                        <tr class="wishlist__row">
+                            <td class="wishlist__column wishlist__column--image">
+                                {% if favorite.store_product.product.image_name %}
+                                    <a href="">
+                                        <img src="{{ favorite.store_product.product.image_name.url }}" onerror="this.onerror=null;this.src='{% static 'images/no-image.svg' %}'" alt="">
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td class="wishlist__column wishlist__column--product">
+                                <a href="" class="wishlist__product-name">
+                                    {{ favorite.store_product.product.product_name }}
+                                </a>
+                            </td>
+                            <td class="wishlist__column wishlist__column--stock">
+                                {% if favorite.store_product.get_number_in_warehouse > 0 %}
+                                    <div class="badge badge-success">موجود در انبار</div>
+                                {% else %}
+                                    <div class="badge badge-danger">موجود نمی باشد</div>
+                                {% endif %}
+                            </td>
+                            <td class="wishlist__column wishlist__column--price">{{favorite.store_product.price}} تومان</td>
+                            <td class="wishlist__column wishlist__column--tocart">
+                                {% if favorite.store_product.get_number_in_warehouse > 0 %}
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="add_to_shop_cart({{ favorite.store_product.id }}, 1)">افزودن به سبد</button>
+                                {% else %}
+                                    <button type="button" class="btn btn-info disable btn-sm">افزودن به سبد</button>
+                                {% endif %}
+                            </td>
+                            <td class="wishlist__column wishlist__column--remove">
+                                <button
+                                    type="button"
+                                    onclick="delete_from_favorite({{ favorite.store_product.id }})"
+                                    class="btn btn-light btn-sm btn-svg-icon"
+                                >
+                                    <svg width="12px" height="12px">
+                                        <use xlink:href="{% static 'images/sprite.svg' %}#cross-12"></use>
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

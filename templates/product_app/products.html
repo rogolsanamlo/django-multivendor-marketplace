@@ -1,0 +1,194 @@
+{% extends 'main_template.html' %}
+{% load static %}
+{% load render_partial %}
+{% load humanize %}
+{% block title %}محصولات | بازارک{% endblock %}
+{% block content %}
+
+<div class="site__body">
+    <div class="page-header">
+        <div class="page-header__container container">
+            <div class="page-header__breadcrumb">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="/">خانه</a>
+                            /
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="#">{{current_group.group_title}}</a>
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="page-header__title">
+                <h1>محصولات گروه <span style='color:green;'>{{current_group.group_title}}</span></h1>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="shop-layout shop-layout--sidebar--start">
+            <div class="shop-layout__sidebar">
+                <div class="block block-sidebar">
+                    <form action="">
+                        {% if sort_type %}<input type="hidden" name="sort_type" value="{{ sort_type }}">{% endif %}
+                        {% if per_page %}<input type="hidden" name="per_page" value="{{ per_page }}">{% endif %}
+                        <div class="block-sidebar__item">
+                            <div class="widget-filters widget" data-collapse data-collapse-opened-class="filter--opened">
+                                <div style="display:flex; justify-content: space-between;">
+                                    <h4 class="widget__title">فیلترها</h4>
+                                    <a
+                                        id="filter_state"
+                                        class="btn-filter-state"
+                                        href="{% url 'products:products_by_group' slug=group_slug %}"
+                                    >
+                                        <i class="fa fa-times"></i>
+                                        حذف فیلتر
+                                    </a>
+                                </div>
+
+                                <div class="widget-filters__list">
+                                    <div class="widget-filters__item">
+                                        <div class="filter filter--opened" data-collapse-item>
+                                            <button type="button" class="filter__title" data-collapse-trigger>
+                                                دسته ها
+                                                <svg class="filter__arrow" width="12px" height="7px">
+                                                    <use xlink:href="{% static 'images/sprite.svg' %}#arrow-rounded-down-12x7"></use>
+                                                </svg>
+                                            </button>
+                                            <div class="filter__body" data-collapse-content>
+                                                <div class="filter__container">
+                                                    <div class="filter-categories">
+                                                        {% render_partial 'products:get_product_groups_menu' %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {% include 'partials/products/price_filter.html' %}
+                                    {% render_partial 'products:get_brands' slug=current_group.slug %}
+                                    {% render_partial 'products:get_stores' slug=current_group.slug %}
+                                    {% render_partial 'products:get_features_for_filter' slug=current_group.slug %}
+                                </div>
+                                <div class="widget-filters__actions d-flex">
+                                    <button type="submit" class="btn btn-primary btn-sm">فیلتر</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="shop-layout__content">
+                <div class="block">
+                    <div class="products-view">
+                        <div class="products-view__options">
+                            <div class="view-options">
+                                <div class="view-options__legend">
+                                    تعداد کل محصولات این گروه : {{product_count}} محصول
+                                </div>
+                                <div class="view-options__divider"></div>
+                                <div class="view-options__control">
+                                    <label for="">مرتب‌سازی بر اساس</label>
+                                    <div>
+                                        <select class="form-control form-control-sm" name="sort_type" id="select_sort" onchange="changeListOption('sort_type', this.value)">
+                                            {% if sort_type == "0" %}
+                                                <option value="0" selected>پیش فرض</option>
+                                                <option value="1">قیمت از کم به زیاد</option>
+                                                <option value="2">قیمت از زیاد به کم</option>
+                                            {% elif sort_type == "1" %}
+                                                <option value="0">پیش فرض</option>
+                                                <option value="1" selected>قیمت از کم به زیاد</option>
+                                                <option value="2">قیمت از زیاد به کم</option>
+                                            {% elif sort_type == "2" %}
+                                                <option value="0">پیش فرض</option>
+                                                <option value="1">قیمت از کم به زیاد</option>
+                                                <option value="2" selected>قیمت از زیاد به کم</option>
+                                            {% endif %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="view-options__control">
+                                    <label for="">نمایش</label>
+                                    <div>
+                                        <select class="form-control form-control-sm" name="per_page" id="select_per_page" onchange="changeListOption('per_page', this.value)">
+                                            {% for item in show_count_product %}
+                                                <option value="{{item}}"{% if item == per_page %} selected{% endif %}>{{item}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="products-view__list products-list" data-layout="grid-3-sidebar" data-with-features="false">
+                            <div class="products-list__body">
+                                {% for product in page_obj %}
+                                    {% include 'partials/products/product_box.html' with type=3 %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <br>
+                        <nav aria-label="Page navigation example">
+                            <ul class="pagination justify-content-center">
+
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{{ base_query }}page={{ page_obj.previous_page_number }}">قبلی</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" tabindex="-1" aria-disabled="True">قبلی</a>
+                                    </li>
+                                {% endif %}
+
+                                {% if page_obj.number|add:'-4' > 1 %}
+                                    <li class="page-item"><a class="page-link" href="?{{ base_query }}page={{ page_obj.number|add:'-5' }}">&hellip;</a></li>
+                                {% endif %}
+
+                                {% for i in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == i %}
+                                        <li class="page-item active" aria-current="page">
+                                            <span class="page-link">
+                                                {{ i }}
+                                                <span class="sr-only">(current)</span>
+                                            </span>
+                                        </li>
+                                    {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
+                                        <li class="page-item"><a class="page-link" href="?{{ base_query }}page={{ i }}">{{ i }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.paginator.num_pages > page_obj.number|add:'4' %}
+                                    <li class="page-item"><a class="page-link" href="?{{ base_query }}page={{ page_obj.number|add:'5' }}">&hellip;</a></li>
+                                {% endif %}
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{{ base_query }}page={{ page_obj.next_page_number }}">بعدی</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" tabindex="-1" aria-disabled="True">بعدی</a>
+                                    </li>
+                                {% endif %}
+
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Sort / per-page selects live outside the filter form, so they build the
+    // URL themselves: keep every current filter, change one option, go to page 1.
+    function changeListOption(name, value) {
+        var url = new URL(window.location.href);
+        url.searchParams.set(name, value);
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+    }
+</script>
+{% endblock content %}

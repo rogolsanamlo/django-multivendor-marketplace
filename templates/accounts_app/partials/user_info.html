@@ -1,0 +1,80 @@
+<div class="dashboard__profile">
+
+    <div class="dashboard__profile-card">
+
+        <div class="dashboard__profile-card-content">
+
+            <div class="dashboard__profile-card-avatar">
+
+                {% if profile and profile.image_name %}
+                    <img
+                        src="{{ profile.image_name.url }}"
+                        alt="تصویر پروفایل"
+                    >
+                {% else %}
+                    <img
+                        src="{{ media_url }}images/customer/nophotom.png"
+                        alt="تصویر پیش‌فرض پروفایل"
+                    >
+                {% endif %}
+
+            </div>
+
+            <div class="dashboard__profile-card-info">
+
+                <div class="dashboard__profile-card-name">
+                    {{ user.name }} {{ user.family }}
+                </div>
+
+                <div class="dashboard__profile-card-email">
+                    {{ user.email }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="dashboard__address">
+
+    <div class="address-card">
+
+        <div class="address-card__body">
+
+            <div class="address-card__name">
+                اطلاعات کاربری
+            </div>
+
+            {% if profile %}
+
+                <div class="address-card__row">
+                    شماره موبایل:
+                    {{ user.mobile_number }}
+                </div>
+
+                <div class="address-card__row">
+                    ایمیل:
+                    {{ user.email }}
+                </div>
+
+                <div class="address-card__row">
+                    آدرس:
+                    {{ profile.address }}
+                </div>
+
+            {% else %}
+
+                <div class="address-card__row">
+                    اطلاعات پروفایل ثبت نشده است.
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>

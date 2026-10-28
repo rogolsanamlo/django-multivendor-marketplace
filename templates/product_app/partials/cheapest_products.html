@@ -1,0 +1,25 @@
+<div class="block block-products-carousel" data-layout="grid-5">
+    <div class="container">
+        {% include "partials/products/root_group.html" with title="ارزان ترین محصولات" %}
+
+        <div class="group-section" data-section="all">
+            <div class="product-flexbox">
+                {% for product in products %}
+                    {% include "partials/products/product_box.html" with type=1 %}
+                {% endfor %}
+            </div>
+        </div>
+
+        {% for section in group_sections %}
+            <div class="group-section" data-section="{{ section.group.id }}" hidden>
+                <div class="product-flexbox">
+                    {% for product in section.products %}
+                        {% include "partials/products/product_box.html" with type=1 %}
+                    {% empty %}
+                        <p class="text-muted p-4">محصولی در این دسته‌بندی وجود ندارد.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>

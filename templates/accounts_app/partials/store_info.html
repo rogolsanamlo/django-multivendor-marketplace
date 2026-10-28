@@ -1,0 +1,66 @@
+<div class="dashboard__address mt-4">
+
+    <div class="address-card">
+
+        <div class="address-card__body">
+
+            <div class="address-card__name">
+                {{ store.store_name }}
+            </div>
+
+            <div class="address-card__row">
+                شماره تماس:
+                {{ store.store_phone }}
+            </div>
+
+            <div class="address-card__row">
+                آدرس:
+                {{ store.address }}
+            </div>
+
+            <div class="address-card__row">
+                توضیحات:
+                {{ store.description }}
+            </div>
+
+            <div class="mt-3">
+
+                {% if store.logo %}
+                    <img
+                        src="{{ store.logo.url }}"
+                        alt="لوگوی فروشگاه"
+                        class="img-fluid mb-3"
+                    >
+                {% else %}
+                    <img
+                        src="{{ media_url }}images/logo/nophotom.png"
+                        alt="لوگوی پیش‌فرض فروشگاه"
+                        class="img-fluid mb-3"
+                    >
+                {% endif %}
+
+            </div>
+
+            <div>
+
+                <a
+                    href="{% url 'accounts:edit_store' %}"
+                    class="btn btn-primary"
+                >
+                    ویرایش فروشگاه
+                </a>
+
+                <a
+                    href="{% url 'accounts:store_detail' %}"
+                    class="btn btn-secondary mr-2"
+                >
+                    جزئیات فروشگاه
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

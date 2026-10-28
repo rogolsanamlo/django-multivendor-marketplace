@@ -1,0 +1,11 @@
+# Persian overrides for admin strings that are missing from Django's own fa catalog.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: fa\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Please correct the error below."
+msgid_plural "Please correct the errors below."
+msgstr[0] "لطفاً خطای زیر را اصلاح کنید."
+msgstr[1] "لطفاً خطاهای زیر را اصلاح کنید."

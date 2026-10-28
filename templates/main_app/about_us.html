@@ -1,0 +1,39 @@
+{% extends 'main_template.html' %}
+
+{% block title %}
+    درباره ما
+{% endblock %}
+
+{% block content %}
+    <div class="site__body">
+        <div class="page-header">
+            <div class="page-header__container container">
+                <div class="page-header__breadcrumb">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'main:index' %}">خانه</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">درباره ما</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <div class="block about-us">
+            <div class="about-us__image" style="background-image: linear-gradient(135deg, #ee4156, #f7931e);"></div>
+            <div class="about-us__body">
+                <h1 class="about-us__title">درباره بازارک</h1>
+                <div class="about-us__text typography">
+                    <p>
+                        بازارک یک بازارچه‌ی اینترنتی چندفروشنده است. هر کاربر می‌تواند فروشگاه خودش را ثبت کند و
+                        کالاهای موجود در سایت را با قیمت دلخواه خودش عرضه کند.
+                    </p>
+                    <p>
+                        مشتریان می‌توانند بدون ثبت‌نام همه‌ی کالاها را ببینند و جستجو کنند، اما برای ثبت سفارش باید
+                        وارد حساب کاربری خود شوند. هر سفارش فقط از یک فروشگاه انجام می‌شود.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

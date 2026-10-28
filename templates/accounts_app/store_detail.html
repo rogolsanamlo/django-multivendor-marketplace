@@ -1,0 +1,64 @@
+{% extends "seller_panel_template.html" %}
+
+{% block title %}
+جزئیات فروشگاه
+{% endblock title %}
+
+{% block content %}
+
+<div class="dashboard">
+
+    <div class="card">
+
+        <div class="card-header">
+            <h5>جزئیات فروشگاه</h5>
+        </div>
+
+        <div class="card-divider"></div>
+
+        <div class="card-body">
+
+            {% if store.logo %}
+                <div class="mb-4">
+                    <img
+                        src="{{ store.logo.url }}"
+                        alt="لوگوی فروشگاه"
+                        class="img-fluid"
+                    >
+                </div>
+            {% endif %}
+
+            <p>
+                <strong>نام فروشگاه:</strong>
+                {{ store.store_name }}
+            </p>
+
+            <p>
+                <strong>شماره تماس:</strong>
+                {{ store.store_phone }}
+            </p>
+
+            <p>
+                <strong>آدرس:</strong>
+                {{ store.address }}
+            </p>
+
+            <p>
+                <strong>توضیحات:</strong>
+                {{ store.description }}
+            </p>
+
+            <a
+                href="{% url 'accounts:edit_store' %}"
+                class="btn btn-primary"
+            >
+                ویرایش فروشگاه
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock content %}

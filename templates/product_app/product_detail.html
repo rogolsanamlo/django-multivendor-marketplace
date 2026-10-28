@@ -1,0 +1,270 @@
+{% extends 'main_template.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}
+  {{ store_product.product.product_name }} | بازارک
+{% endblock %}
+
+{% block content %}
+<div class="site__body">
+    <div class="page-header">
+        <div class="page-header__container container">
+            <div class="page-header__breadcrumb">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'main:index' %}">خانه</a>
+                            /
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="#">محصولات</a>
+                            /
+                        </li>
+                        <li class="active" aria-current="page">محصول</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <div class="block">
+        <div class="container">
+            <div class="product product--layout--columnar" data-layout="columnar">
+                <div class="product__content">
+                    <div class="product__gallery">
+                        <div class="product-gallery">
+                            <div class="product-gallery__featured">
+                                <div class="owl-carousel" id="product-image">
+                                    <a href="{{media_url}}{{store_product.product.image_name}}" target="_blank"><img src="{{media_url}}{{store_product.product.image_name}}" onerror="this.onerror=null;this.src='{% static 'images/no-image.svg' %}'" alt=""></a>
+                                    {% for img in store_product.product.gallery_images.all %}
+                                        <a href="{{media_url}}{{img.image_name}}" target="_blank"><img src="{{media_url}}{{img.image_name}}" onerror="this.onerror=null;this.src='{% static 'images/no-image.svg' %}'" alt=""></a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="product-gallery__carousel">
+                                <div class="owl-carousel" id="product-carousel">
+                                    <a href="" class="product-gallery__carousel-item"><img class="product-gallery__carousel-image" src="{{media_url}}{{store_product.product.image_name}}" onerror="this.onerror=null;this.src='{% static 'images/no-image.svg' %}'" alt=""></a>
+                                    {% for img in store_product.product.gallery_images.all %}
+                                        <a href="" class="product-gallery__carousel-item"><img class="product-gallery__carousel-image" src="{{media_url}}{{img.image_name}}" onerror="this.onerror=null;this.src='{% static 'images/no-image.svg' %}'" alt=""></a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="product__info">
+                        <div class="product__wishlist-compare">
+                            <button type="button" class="btn btn-sm btn-light btn-svg-icon" data-toggle="tooltip" data-placement="right" title="افزودن به علاقه‌مندی‌ها" onclick="addTofavorites({{ store_product.id }})">
+                                <svg width="16px" height="16px">
+                                    <use xlink:href="{% static 'images/sprite.svg' %}#wishlist-16"></use>
+                                </svg>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-light btn-svg-icon" data-toggle="tooltip" data-placement="right" title="افزودن به مقایسه" onclick="addToCompareList({{ store_product.id }})">
+                                <svg width="16px" height="16px">
+                                    <use xlink:href="{% static 'images/sprite.svg' %}#compare-16"></use>
+                                </svg>
+                            </button>
+                        </div>
+                        <h1 class="product__name">{{store_product.product.product_name}}</h1>
+                        <div class="product__rating">
+                            <div class="product__rating-stars">
+                                <div class="rating">
+                                    <div class="rating__body">
+                                        {% for active in store_product.rating_stars %}
+                                            <svg class="rating__star{% if active %} rating__star--active{% endif %}" width="13px" height="12px">
+                                                <g class="rating__fill"><use xlink:href="{% static 'images/sprite.svg' %}#star-normal"></use></g>
+                                                <g class="rating__stroke"><use xlink:href="{% static 'images/sprite.svg' %}#star-normal-stroke"></use></g>
+                                            </svg>
+                                            <div class="rating__star rating__star--only-edge{% if active %} rating__star--active{% endif %}">
+                                                <div class="rating__fill"><div class="fake-svg-icon"></div></div>
+                                                <div class="rating__stroke"><div class="fake-svg-icon"></div></div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="product__description">
+                            {{store_product.product.summary_description}}
+                        </div>
+
+                        <ul style="width: 100%; display: flex; justify-content: space-between; padding: 0;">
+                            <li style="list-style: none;">برند: <a href="">{{store_product.product.brand}}</a></li>
+                            <li style="list-style: none;">تعداد نظرات: <a href="#tab-reviews">{{ store_product.comments_count }}</a> نظر</li>
+                        </ul>
+                        <div style="display: flex; justify-content: space-between;">
+
+                            <h6>میانگین امتیاز کالا : <span id="average-score" style="color: red;">{{store_product.get_average_score|floatformat:1}}</span></h6>
+
+                            {% if user.is_authenticated %}
+                                <div>
+                                    {% with ''|center:5 as range %}
+                                        {% for i in range %}
+                                            <span id="star_{{ forloop.counter }}" class="fa fa-star cursor-pointer{% if forloop.counter <= user_score %} checked{% endif %}" onclick="addScore({{ forloop.counter }},{{store_product.id}})"></span>
+                                        {% endfor %}
+                                    {% endwith %}
+                                </div>
+                            {% else %}
+                                <h6 style="text-decoration: underline;">
+                                    برای امتیاز دهی
+                                    <a href="{% url 'accounts:login' %}?next={{ store_product.get_absolute_url }}">ورود</a>
+                                    یا
+                                    <a href="{% url 'accounts:register' %}?next={{ store_product.get_absolute_url }}">ثبت نام</a>
+                                    کنید
+                                </h6>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="product__sidebar">
+                        <div class="product__availability">موجودی: <span class="text-success">موجود در انبار</span></div>
+                        <div class="product__prices">{{store_product.price|intcomma}} تومان</div>
+                        <!-- .product__options -->
+                        <form class="product__options">
+                            <div class="form-group product__option">
+                                <label class="product__option-label">ویژگیها</label>
+                                <div class="input-radio-label">
+                                    <div class="input-radio-label__list">
+                                        {% for feature in store_product.product.product_feature.all %}
+                                            <span>{{feature.feature}} : {{feature.value}}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group product__option">
+                                <label class="product__option-label" for="product-quantity">تعداد</label>
+                                <div class="product__actions">
+                                    <div class="product__actions-item">
+                                        <div class="input-number product__quantity">
+                                            <input id="product-qty" class="form-control form-control-lg" type="number" min="1" value="1">
+                                        </div>
+                                    </div>
+                                    <div class="product__actions-item product__actions-item--addtocart">
+                                        <a class="btn btn-primary btn-lg" onclick="add_to_shop_cart({{store_product.id}}, 0)">افزودن به سبد</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="product__footer">
+                        <div class="product__share-links share-links">
+                            <ul class="share-links__list">
+                                <li class="share-links__item share-links__item--type--like">
+                                    <a href="https://telegram.me/share/url?url={{ request.build_absolute_uri|urlencode }}">اشتراک گذاری</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="product-tabs">
+                <div class="product-tabs__list">
+                    <a href="#tab-description" class="product-tabs__item product-tabs__item--active">توضیحات</a>
+                    <a href="#tab-specification" class="product-tabs__item">مشخصات فنی</a>
+                    <a href="#tab-reviews" class="product-tabs__item">دیدگاه ها</a>
+                </div>
+                <div class="product-tabs__content">
+                    <div class="product-tabs__pane product-tabs__pane--active" id="tab-description">
+                        <div class="typography">
+                            <h3>توضیحات کامل محصول</h3>
+                            {% autoescape off %}
+                                {{store_product.product.description}}
+                            {% endautoescape %}
+                        </div>
+                    </div>
+                    <div class="product-tabs__pane" id="tab-specification">
+                        <div class="spec">
+                            <h3 class="spec__header">مشخصات فنی</h3>
+                            <div class="spec__section">
+                                <h4 class="spec__section-title">عمومی</h4>
+                                {% for feature in store_product.product.product_feature.all %}
+                                    <div class="spec__row">
+                                        <div class="spec__name">{{feature.feature}}</div>
+                                        <div class="spec__value">{{feature.value}}</div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="product-tabs__pane" id="tab-reviews">
+                        <div class="reviews-view">
+                            <div class="reviews-view__list">
+                                <h3 class="reviews-view__header">دیدگاه های مشتریان</h3>
+                                <div class="reviews-list">
+                                    <ol class="reviews-list__content">
+                                        {% for comment in store_product.comments.all %}
+                                            {% if comment.is_active %}
+                                                {% if comment.comment_parent == None %}
+                                                    <li class="reviews-list__item" style="display: flex; justify-content: space-between;">
+                                                        <div class="review">
+                                                            <div class="review__avatar">
+                                                                <img src="{{media_url}}images/avatars/avatar-2.jpg" alt="">
+                                                            </div>
+                                                            <div class="review__content">
+                                                                <div class="review__author">{{comment.commenting_user.name}}</div>
+                                                                <div class="review__text">
+                                                                    {{comment.comment_text}}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            {% if user.is_authenticated %}
+                                                                <div>
+                                                                    <a class="btn btn-info" id="btn_{{comment.id}}" onclick="showCreateCommentForm({{store_product.id}},{{comment.id}},'{{store_product.product.slug}}');">
+                                                                        پاسخ
+                                                                    </a>
+                                                                </div>
+                                                                <div id="comment_form_{{comment.id}}">
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </li>
+
+                                                    {% for item in comment.comments_child.all %}
+                                                        {% if item.is_active %}
+                                                            <li class="reviews-list__item" style="background-color: beige; width: 95%; margin: 10px 5%;">
+                                                                <div class="review">
+                                                                    <div class="review__avatar"><img src="{{media_url}}images/avatars/avatar-4.jpg" alt=""></div>
+                                                                    <div class="review__content">
+                                                                        <div class="review__author">{{item.commenting_user.name}}</div>
+                                                                        <div class="review__text">
+                                                                            {{item.comment_text}}
+                                                                        </div>
+                                                                        <div class="review__date">{{item.register_date }}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </li>
+                                                        {% endif %}
+                                                    {% endfor %}
+
+                                                {% else %}
+
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </ol>
+                                </div>
+                            </div>
+
+                            {% if user.is_authenticated %}
+                                <h3 class="reviews-view__header">دیدگاه هاخود را بنویسید</h3>
+                                <div class="row">
+                                    <div class="col-12 col-lg-9 col-xl-8">
+                                        {% include "csf_app/partials/create_comment.html" with form=comment_form slug=store_product.product.slug %}
+                                    </div>
+                                </div>
+                            {% else %}
+                                <h5>برای درج دیدگاه خود باید
+                                    <a href="{% url 'accounts:login' %}?next={{ store_product.get_absolute_url }}">ورود</a>
+                                    یا
+                                    <a href="{% url 'accounts:register' %}?next={{ store_product.get_absolute_url }}">ثبت نام</a>
+                                    کنید
+                                </h5>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

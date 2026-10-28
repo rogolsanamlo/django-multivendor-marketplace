@@ -1,0 +1,66 @@
+{% load humanize %}
+
+<div class="dashboard__orders">
+
+    <div class="card">
+
+        <div class="card-header">
+            <h5>آخرین سفارش‌ها</h5>
+        </div>
+
+        <div class="card-divider"></div>
+
+        <div class="card-table">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>سفارش</th>
+                        <th>تاریخ</th>
+                        <th>وضعیت</th>
+                        <th>مبلغ (ریال)</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for order in orders %}
+
+                        <tr>
+                            <td>
+                                #{{ order.id }}
+                            </td>
+
+                            <td>
+                                {{ order.register_date|naturalday }}
+                            </td>
+
+                            <td>
+                                {% if order.is_finally %}پرداخت شده{% else %}در انتظار پرداخت{% endif %}
+                            </td>
+
+                            <td>
+                                {{ order.get_order_total_price|intcomma }}
+                            </td>
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+                            <td colspan="4">
+                                سفارشی ثبت نشده است.
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

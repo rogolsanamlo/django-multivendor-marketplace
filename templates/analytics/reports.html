@@ -1,0 +1,422 @@
+{% extends 'seller_panel_template.html' %}
+{% load humanize %}
+{% block title %}
+  گزارش‌های تحلیلی
+{% endblock %}
+
+{% block content %}
+
+  <div class="mb-3">
+    <a class="btn btn-success" href="{% url 'analytics:export_excel' %}">دانلود Excel</a>
+    <a class="btn btn-danger" href="{% url 'analytics:export_pdf' %}">دانلود PDF</a>
+  </div>
+
+  <div class="dashboard">
+
+    <div class="card mb-4">
+      <div class="card-header">خلاصه فروش</div>
+
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3">
+            <h6>فروش کل</h6>
+            <h4>{{ pandas_summary.total_sales|intcomma }}</h4>
+          </div>
+
+          <div class="col-md-3">
+            <h6>میانگین فروش</h6>
+            <h4>{{ pandas_summary.average_sales|floatformat:0|intcomma }}</h4>
+          </div>
+
+          <div class="col-md-3">
+            <h6>بیشترین فروش</h6>
+            <h4>{{ pandas_summary.max_sale|intcomma }}</h4>
+          </div>
+
+          <div class="col-md-3">
+            <h6>کمترین فروش</h6>
+            <h4>{{ pandas_summary.min_sale|intcomma }}</h4>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">روند فروش ماهانه</div>
+
+      <div class="card-body">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>ماه</th>
+              <th>مبلغ فروش</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for item in monthly_trend %}
+              <tr>
+                <td>{{ item.month }}</td>
+                <td>{{ item.total_price|intcomma }} تومان</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">نمودار فروش ماهانه</div>
+
+      <div class="card-body">
+        <canvas id="monthlyChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">رشد فروش ماهانه</div>
+
+      <div class="card-body">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>ماه</th>
+              <th>فروش</th>
+              <th>رشد</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for item in sales_growth %}
+              <tr>
+                <td>{{ item.month }}</td>
+                <td>{{ item.total_price|intcomma }} تومان</td>
+                <td>
+                  {% if item.growth_percent > 0 %}
+                    <span class="text-success">▲ {{ item.growth_percent }}%</span>
+                  {% elif item.growth_percent < 0 %}
+                    <span class="text-danger">▼ {{ item.growth_percent }}%</span>
+                  {% else %}
+                    <span class="text-secondary">{{ item.growth_percent }}%</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">پیش‌بینی فروش فردا</div>
+
+      <div class="card-body text-center">
+        <h2>{{ forecast.forecast|intcomma }} تومان</h2>
+        <small class="text-muted">بر اساس میانگین فروش روزهای گذشته</small>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">نمودار رشد فروش ماهانه</div>
+
+      <div class="card-body">
+        <canvas id="growthChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">تحلیل ABC محصولات</div>
+
+      <div class="card-body">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>محصول</th>
+              <th>فروش</th>
+              <th>درصد</th>
+              <th>درصد تجمعی</th>
+              <th>کلاس</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for item in abc_analysis %}
+              <tr>
+                <td>{{ item.store_product__product__product_name }}</td>
+                <td>{{ item.total_price|intcomma }} تومان</td>
+                <td>{{ item.percent|floatformat:2 }}%</td>
+                <td>{{ item.cumulative|floatformat:2 }}%</td>
+                <td>
+                  {% if item.class == 'A' %}
+                    <span class="badge badge-success">A</span>
+                  {% elif item.class == 'B' %}
+                    <span class="badge badge-warning">B</span>
+                  {% else %}
+                    <span class="badge badge-danger">C</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">نمودار تحلیل ABC</div>
+
+      <div class="card-body">
+        <canvas id="abcChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">مشتریان برتر</div>
+
+      <div class="card-body">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>نام مشتری</th>
+              <th>تعداد سفارش</th>
+              <th>مجموع خرید</th>
+              <th>میانگین خرید</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for item in customer_segmentation %}
+              <tr>
+                <td>{{ item.name }} {{ item.family }}</td>
+                <td>{{ item.total_orders }}</td>
+                <td>{{ item.total_purchase|intcomma }} تومان</td>
+                <td>{{ item.average_purchase|floatformat:0|intcomma }} تومان</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">فروش بر اساس روزهای هفته</div>
+
+      <div class="card-body">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>روز هفته</th>
+              <th>مبلغ فروش</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for item in weekday_sales %}
+              <tr>
+                <td>{{ item.weekday }}</td>
+                <td>{{ item.total_price|intcomma }} تومان</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">نمودار فروش روزهای هفته</div>
+
+      <div class="card-body">
+        <canvas id="weekdayChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">جدول Pivot فروش ماهانه محصولات</div>
+
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover">
+            <thead>
+              <tr>
+                <th>محصول</th>
+                {% for month in pivot_months %}
+                  <th>{{ month }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for row in pivot_rows %}
+                <tr>
+                  <td>{{ row.name }}</td>
+                  {% for value in row.cells %}
+                    <td>{{ value|intcomma }} تومان</td>
+                  {% endfor %}
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="{{ pivot_months|length|add:1 }}">هنوز فروشی ثبت نشده است.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const labels = {{ month_labels|safe }};
+    const values = {{ month_values|safe }};
+
+    new Chart(
+      document.getElementById("monthlyChart"),
+      {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "فروش ماهانه",
+              data: values,
+              backgroundColor: "#0d6efd",
+              borderColor: "#084298",
+              borderWidth: 1,
+              borderRadius: 8,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: true
+            },
+            title: {
+              display: true,
+              text: "روند فروش ماهانه"
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      }
+    );
+  </script>
+
+  <script>
+    const growthLabels = {{ growth_labels|safe }};
+    const growthValues = {{ growth_values|safe }};
+
+    new Chart(
+      document.getElementById("growthChart"),
+      {
+        type: "line",
+        data: {
+          labels: growthLabels,
+          datasets: [
+            {
+              label: "درصد رشد فروش",
+              data: growthValues,
+              borderColor: "#dc3545",
+              backgroundColor: "#dc3545",
+              tension: 0.4,
+              fill: false,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: "روند رشد فروش ماهانه"
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              ticks: {
+                callback: function(value) {
+                  return value + "%";
+                }
+              }
+            }
+          }
+        }
+      }
+    );
+  </script>
+
+  <script>
+    const weekdayLabels = {{ weekday_labels|safe }};
+    const weekdayValues = {{ weekday_values|safe }};
+
+    new Chart(
+      document.getElementById("weekdayChart"),
+      {
+        type: "line",
+        data: {
+          labels: weekdayLabels,
+          datasets: [
+            {
+              label: "فروش روزهای هفته",
+              data: weekdayValues,
+              borderColor: "#198754",
+              backgroundColor: "#198754",
+              tension: 0.4,
+              fill: false,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: "روند فروش در روزهای هفته"
+            }
+          }
+        }
+      }
+    );
+  </script>
+
+  <script>
+    const abcLabels = {{ abc_labels|safe }};
+    const abcValues = {{ abc_values|safe }};
+
+    new Chart(
+      document.getElementById("abcChart"),
+      {
+        type: "pie",
+        data: {
+          labels: abcLabels,
+          datasets: [
+            {
+              data: abcValues,
+              backgroundColor: [
+                "#198754",
+                "#ffc107",
+                "#dc3545"
+              ]
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: "تحلیل محصولات ABC"
+            }
+          }
+        }
+      }
+    );
+  </script>
+{% endblock %}

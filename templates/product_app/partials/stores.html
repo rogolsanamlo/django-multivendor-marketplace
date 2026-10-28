@@ -1,0 +1,22 @@
+{% for store in stores %}
+    <label class="filter-list__item">
+        <span class="filter-list__input input-check">
+            <span class="input-check__body">
+                <input id="store_{{ store.id }}"
+                       name="store"
+                       value="{{ store.id }}"
+                       type="checkbox"
+                       class="input-check__input" />
+                <span class="input-check__box"></span>
+            </span>
+        </span>
+
+        <span class="filter-list__title">
+            {{ store.store_name }}
+        </span>
+
+        <span class="filter-list__counter">
+            {{ store.count }}
+        </span>
+    </label>
+{% endfor %}

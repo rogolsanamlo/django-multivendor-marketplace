@@ -1,0 +1,105 @@
+from django.urls import path
+
+from . import seller_views, views
+
+
+app_name = "accounts"
+
+
+urlpatterns = [
+    path(
+        'register/',
+        views.RegisterUserView.as_view(),
+        name='register'
+    ),
+    path(
+        'verify/',
+        views.VerifyRegisterCodeView.as_view(),
+        name='verify'
+    ),
+    path(
+        'login/',
+        views.LoginUserView.as_view(),
+        name='login'
+    ),
+    path(
+        'logout/',
+        views.LogoutUserView.as_view(),
+        name='logout'
+    ),
+    path(
+        'userpanel/',
+        views.UserPanelView.as_view(),
+        name='userpanel'
+    ),
+    path(
+        'profile/edit/',
+        views.UpdateProfileView.as_view(),
+        name='update_profile'
+    ),
+    path(
+        'change_password/',
+        views.ChangePasswordView.as_view(),
+        name='change_password'
+    ),
+    path(
+        'remember_password/',
+        views.RememberPasswordView.as_view(),
+        name='remember_password'
+    ),
+    path(
+        'store/create/',
+        views.CreateStoreView.as_view(),
+        name='create_store'
+    ),
+    path(
+        'store/detail/',
+        views.StoreDetailView.as_view(),
+        name='store_detail'
+    ),
+    path(
+        'store/edit/',
+        views.EditStoreView.as_view(),
+        name='edit_store'
+    ),
+    path(
+        'seller_dashboard/',
+        views.SellerDashboardView.as_view(),
+        name='seller_dashboard'
+    ),
+    path(
+        'show_last_orders/',
+        views.show_last_orders,
+        name='show_last_orders'
+    ),
+    path(
+        'show_user_payments/',
+        views.show_user_payments,
+        name='show_user_payments'
+    ),
+    path(
+        'seller/products/',
+        seller_views.SellerProductsView.as_view(),
+        name='seller_products'
+    ),
+    path(
+        'seller/products/add/',
+        seller_views.SellerAddProductView.as_view(),
+        name='seller_product_add'
+    ),
+    path(
+        'seller/products/<int:pk>/edit/',
+        seller_views.SellerEditProductView.as_view(),
+        name='seller_product_edit'
+    ),
+    path(
+        'seller/orders/',
+        seller_views.SellerOrdersView.as_view(),
+        name='seller_orders'
+    ),
+    path(
+        'seller/stock/',
+        seller_views.SellerStockView.as_view(),
+        name='seller_stock'
+    ),
+]

@@ -1,0 +1,25 @@
+<ul class="filter-categories__list">
+    {% for group in product_groups %}
+        <li class="filter-categories__item filter-categories__item--parent">
+            <a href="{% url 'products:products_by_group' slug=group.slug %}">
+                {{ group.group_title }}
+            </a>
+        </li>
+
+        {% for sub_group in group.groups.all %}
+            <li class="filter-categories__item filter-categories__item--child">
+                <a href="{% url 'products:products_by_group' slug=sub_group.slug %}">
+                    {{ sub_group.group_title }}
+                </a>
+            </li>
+
+            {% for child_group in sub_group.groups.all %}
+                <li class="filter-categories__item filter-categories__item--child">
+                    <a href="{% url 'products:products_by_group' slug=child_group.slug %}">
+                        {{ child_group.group_title }}
+                    </a>
+                </li>
+            {% endfor %}
+        {% endfor %}
+    {% endfor %}
+</ul>

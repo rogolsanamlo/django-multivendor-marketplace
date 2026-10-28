@@ -1,0 +1,25 @@
+{% extends "user_panel_template.html" %}
+
+{% block title %}
+پنل کاربری
+{% endblock title %}
+
+{% block content %}
+
+<div class="dashboard">
+
+    {% include "accounts_app/partials/user_info.html" %}
+
+    <div class="mt-3">
+        <a href="{% url 'accounts:show_last_orders' %}" class="btn btn-primary">
+            سفارش‌های من
+        </a>
+
+        <a href="{% url 'accounts:show_user_payments' %}" class="btn btn-primary mr-2">
+            پرداخت‌های من
+        </a>
+    </div>
+
+</div>
+
+{% endblock content %}

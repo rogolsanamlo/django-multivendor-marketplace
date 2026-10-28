@@ -1,0 +1,104 @@
+{% extends "seller_panel_template.html" %}
+{% load humanize %}
+
+{% block title %}
+موجودی انبار
+{% endblock title %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>ثبت تغییر موجودی</h5>
+        </div>
+        <div class="card-divider"></div>
+        <div class="card-body">
+            {% if not rows %}
+                <p>ابتدا <a href="{% url 'accounts:seller_product_add' %}">یک کالا به فروشگاه خود اضافه کنید</a>.</p>
+            {% else %}
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    {% for field in form %}
+                        <div class="form-group">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <button type="submit" class="btn btn-primary">ثبت</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>موجودی فعلی کالاها</h5>
+        </div>
+        <div class="card-divider"></div>
+        <div class="card-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>کالا</th>
+                        <th>موجودی</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            <td>{{ row.item.product.product_name }}</td>
+                            <td>{{ row.stock }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="2">کالایی ثبت نشده است.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5>آخرین تغییرات انبار</h5>
+        </div>
+        <div class="card-divider"></div>
+        <div class="card-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>کالا</th>
+                        <th>نوع</th>
+                        <th>تعداد</th>
+                        <th>تاریخ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                        <tr>
+                            <td>{{ entry.store_product.product.product_name }}</td>
+                            <td>{{ entry.warehouse_type }}</td>
+                            <td>{{ entry.qty }}</td>
+                            <td>{{ entry.register_date|date:"Y/m/d H:i" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4">تغییری ثبت نشده است.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,61 @@
+{% extends 'main_template.html' %}
+
+{% block title %}
+    تماس با ما
+{% endblock %}
+
+{% block content %}
+    <div class="site__body">
+        <div class="page-header">
+            <div class="page-header__container container">
+                <div class="page-header__breadcrumb">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'main:index' %}">خانه</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">تماس با ما</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="page-header__title">
+                    <h1>تماس با ما</h1>
+                </div>
+            </div>
+        </div>
+
+        <div class="block">
+            <div class="container">
+                <div class="card mb-0">
+                    <div class="card-body contact-us">
+                        <div class="contact-us__container">
+                            <div class="row">
+                                <div class="col-12 col-lg-6 pb-4 pb-lg-0">
+                                    <h4 class="contact-us__header card-title">اطلاعات تماس</h4>
+                                    <div class="contact-us__address">
+                                        <p>
+                                            ملایر، خیابان شهدا
+                                            <br />
+                                            ایمیل: info@bazarak.example
+                                            <br />
+                                            تلفن: <span class="ltr_text">081-45231</span>
+                                        </p>
+                                        <p>
+                                            <strong>ساعات پاسخگویی</strong>
+                                            <br />
+                                            شنبه تا چهارشنبه: ۹ صبح تا ۵ بعدازظهر
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-lg-6">
+                                    <h4 class="contact-us__header card-title">پشتیبانی</h4>
+                                    <p>
+                                        برای پیگیری سفارش یا گزارش مشکل، با شماره‌ی پشتیبانی تماس بگیرید یا برای ما ایمیل بفرستید.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

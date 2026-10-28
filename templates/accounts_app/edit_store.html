@@ -1,0 +1,129 @@
+{% extends "seller_panel_template.html" %}
+
+{% block title %}
+ویرایش فروشگاه
+{% endblock title %}
+
+{% block content %}
+
+<div class="dashboard">
+
+    <div class="card">
+
+        <div class="card-header">
+            <h5>ویرایش فروشگاه</h5>
+        </div>
+
+        <div class="card-divider"></div>
+
+        <div class="card-body">
+
+            <form method="post" enctype="multipart/form-data">
+
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="form-group">
+                    {{ form.store_name.label_tag }}
+                    {{ form.store_name }}
+
+                    {% if form.store_name.errors %}
+                        <div class="text-danger">
+                            {{ form.store_name.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.store_phone.label_tag }}
+                    {{ form.store_phone }}
+
+                    {% if form.store_phone.errors %}
+                        <div class="text-danger">
+                            {{ form.store_phone.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.address.label_tag }}
+                    {{ form.address }}
+
+                    {% if form.address.errors %}
+                        <div class="text-danger">
+                            {{ form.address.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.description.label_tag }}
+                    {{ form.description }}
+
+                    {% if form.description.errors %}
+                        <div class="text-danger">
+                            {{ form.description.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+
+                    {% if form.instance.logo %}
+                        <div class="mb-3">
+                            <img
+                                src="{{ form.instance.logo.url }}"
+                                alt="لوگوی فروشگاه"
+                                class="img-fluid"
+                            >
+                        </div>
+                    {% else %}
+                        <p>
+                            لوگویی برای فروشگاه ثبت نشده است.
+                        </p>
+                    {% endif %}
+
+                    <label for="id_logo">
+                        لوگوی فروشگاه
+                    </label>
+
+                    <input
+                        type="file"
+                        name="logo"
+                        id="id_logo"
+                        class="form-control"
+                    >
+
+                    {% if form.logo.errors %}
+                        <div class="text-danger">
+                            {{ form.logo.errors }}
+                        </div>
+                    {% endif %}
+
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    ذخیره تغییرات
+                </button>
+
+                <a
+                    href="{% url 'accounts:userpanel' %}"
+                    class="btn btn-secondary mr-2"
+                >
+                    انصراف
+                </a>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock content %}

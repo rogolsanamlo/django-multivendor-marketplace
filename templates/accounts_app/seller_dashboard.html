@@ -1,0 +1,25 @@
+{% extends "seller_panel_template.html" %}
+
+{% block title %}
+اطلاعات فروشگاه
+{% endblock title %}
+
+{% block content %}
+
+<div class="dashboard">
+
+    {% include "accounts_app/partials/user_info.html" %}
+    {% include "accounts_app/partials/store_info.html" %}
+
+    <div class="mt-3">
+        <a
+            href="{% url 'analytics:seller_dashboard' %}"
+            class="btn btn-primary"
+        >
+            مشاهده آمار فروش
+        </a>
+    </div>
+
+</div>
+
+{% endblock content %}

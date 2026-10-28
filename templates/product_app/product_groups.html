@@ -1,0 +1,62 @@
+{% extends "main_template.html" %}
+{% load static %}
+
+{% block title %}
+    دسته‌بندی کالاها
+{% endblock title %}
+
+{% block content %}
+<div class="site__body">
+    <div class="page-header">
+        <div class="page-header__container container">
+            <div class="page-header__breadcrumb">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'main:index' %}">خانه</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">
+                            دسته‌بندی کالاها
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="page-header__title">
+                <h1>دسته‌بندی کالاها</h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="block block-categories block-categories--layout--compact">
+        <div class="container">
+            <div class="block-categories__list">
+                {% for group in product_groups %}
+                    <div class="block-categories__item category-card category-card--layout--compact">
+                        <div class="category-card__body">
+                            <div class="category-card__image">
+                                <a href="{% url 'products:products_by_group' slug=group.slug %}">
+                                    <img src="{{ media_url }}{{ group.image_name }}"
+                                         onerror="this.onerror=null;this.src='{% static 'images/no-image.svg' %}'"
+                                         alt="{{ group.group_title }}">
+                                </a>
+                            </div>
+                            <div class="category-card__content">
+                                <div class="category-card__name">
+                                    <a href="{% url 'products:products_by_group' slug=group.slug %}">
+                                        {{ group.group_title }}
+                                    </a>
+                                </div>
+                                <div class="category-card__products">{{ group.count }} محصول</div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% if not product_groups %}
+                <p class="text-center text-muted">هنوز دسته‌بندی‌ای ثبت نشده است.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock content %}

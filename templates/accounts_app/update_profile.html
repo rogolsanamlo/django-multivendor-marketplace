@@ -1,0 +1,81 @@
+{% extends "user_panel_template.html" %}
+
+{% block title %}
+ویرایش پروفایل
+{% endblock title %}
+
+{% block content %}
+
+<div class="dashboard">
+
+    <div class="card">
+
+        <div class="card-header">
+            <h5>ویرایش پروفایل</h5>
+        </div>
+
+        <div class="card-divider"></div>
+
+        <div class="card-body">
+
+            <form method="post" enctype="multipart/form-data">
+
+                {% csrf_token %}
+
+                {% if user_form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ user_form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                {% if profile_form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ profile_form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                {{ user_form.as_p }}
+                {{ profile_form.as_p }}
+
+                <div class="form-group mb-0">
+
+                    {% if profile and profile.image_name %}
+                        <img
+                            src="{{ profile.image_name.url }}"
+                            alt="تصویر پروفایل"
+                            class="img-fluid"
+                        >
+                    {% else %}
+                        <img
+                            src="{{ media_url }}images/customer/nophotom.png"
+                            alt="تصویر پیش‌فرض پروفایل"
+                            class="img-fluid"
+                        >
+                    {% endif %}
+
+                </div>
+
+                <div class="mt-3">
+
+                    <button type="submit" class="btn btn-primary">
+                        ذخیره تغییرات
+                    </button>
+
+                    <a
+                        href="{% url 'accounts:userpanel' %}"
+                        class="btn btn-secondary mr-2"
+                    >
+                        انصراف
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock content %}

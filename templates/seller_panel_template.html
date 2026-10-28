@@ -1,0 +1,174 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fa">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {% block title %}{% endblock title %}
+    </title>
+
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/logo.svg' %}">
+
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap-4.5.3/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/owl-carousel-2.3.4/assets/owl.carousel.min.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome-5.6.3/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+
+    <script src="{% static 'vendor/jquery-3.3.1/jquery.min.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap-4.5.3/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'vendor/owl-carousel-2.3.4/owl.carousel.min.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    {# Chart.js: local copy first (static/vendor/chartjs/chart.umd.js), then two CDNs #}
+    <script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+    <script>
+        if (typeof Chart === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"><\/script>');
+        }
+    </script>
+    <script>
+        if (typeof Chart === 'undefined') {
+            document.write('<script src="https://unpkg.com/chart.js@4.4.1/dist/chart.umd.js"><\/script>');
+        }
+    </script>
+</head>
+
+<body>
+    {% include "partials/header.html" %}
+    {% include "partials/messages.html" %}
+
+    <div class="site__body">
+
+        <div class="page-header">
+            <div class="page-header__container container">
+
+                <div class="page-header__title">
+                    <h1>پنل فروشنده</h1>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="block">
+            <div class="container">
+
+                <div class="row">
+
+                    <div class="col-12 col-lg-3 d-flex">
+
+                        <div class="account-nav flex-grow-1">
+
+                            <h4 class="account-nav__title">
+                                مدیریت فروشگاه
+                            </h4>
+
+                            <ul>
+
+                                <li class="account-nav__item">
+                                    <a href="{% url 'analytics:seller_dashboard' %}">
+                                        داشبورد فروش
+                                    </a>
+                                </li>
+
+                                <li class="account-nav__item">
+                                    <a href="{% url 'accounts:seller_dashboard' %}">
+                                        اطلاعات فروشگاه
+                                    </a>
+                                </li>
+
+                                <li class="account-nav__item">
+                                    <a href="{% url 'accounts:edit_store' %}">
+                                        ویرایش فروشگاه
+                                    </a>
+                                </li>
+
+                                <li class="account-nav__item">
+                                    <a href="{% url 'accounts:update_profile' %}">
+                                        ویرایش پروفایل
+                                    </a>
+                                </li>
+
+                                <li class="account-nav__item">
+                                    <a href="{% url 'accounts:seller_products' %}">
+                                        محصولات فروشگاه
+                                    </a>
+                                </li>
+
+                                <li class="account-nav__item">
+                                    <a href="{% url 'accounts:seller_orders' %}">
+                                        سفارشات فروشگاه
+                                    </a>
+                                </li>
+
+                                <li class="account-nav__item">
+                                    <a href="{% url 'accounts:seller_stock' %}">
+                                        موجودی انبار
+                                    </a>
+                                </li>
+
+                                <li class="account-nav__item">
+                                    <a href="{% url 'analytics:reports' %}">
+                                        گزارش فروش
+                                    </a>
+                                </li>
+
+                                <li class="account-nav__item">
+                                    <a href="{% url 'accounts:change_password' %}">
+                                        تغییر رمز عبور
+                                    </a>
+                                </li>
+
+                                <li class="account-nav__item">
+                                    <form method="post" action="{% url 'accounts:logout' %}">
+                                        {% csrf_token %}
+                                        <button type="submit">
+                                            خروج
+                                        </button>
+                                    </form>
+                                </li>
+
+                            </ul>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-12 col-lg-9 mt-4 mt-lg-0">
+
+                        {% if request.user.store and not request.user.store.is_active %}
+                            <div class="alert alert-warning">
+                                فروشگاه شما هنوز توسط مدیر سایت تأیید نشده است؛ تا زمان تأیید، کالاهای شما در سایت نمایش داده نمی‌شوند.
+                            </div>
+                        {% endif %}
+
+                        {% block content %}
+                        {% endblock content %}
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    {% include "partials/footer.html" %}
+    {% include "partials/scripts.html" %}
+
+    <script>
+        if (typeof Chart === 'undefined') {
+            var chartNotice = document.createElement('div');
+            chartNotice.className = 'alert alert-warning text-center';
+            chartNotice.style.margin = '0';
+            chartNotice.textContent = 'نمودارها بارگذاری نشدند: کتابخانه‌ی Chart.js در دسترس نیست. اتصال اینترنت را بررسی کنید یا فایل آن را در static/vendor/chartjs/ قرار دهید.';
+            document.body.insertBefore(chartNotice, document.body.firstChild);
+        }
+    </script>
+</body>
+
+</html>

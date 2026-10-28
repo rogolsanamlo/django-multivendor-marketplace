@@ -1,0 +1,53 @@
+{% load static %}
+<header class="site__header d-lg-block d-none">
+    <div class="site-header">
+        <div class="site-header__topbar topbar">
+            <div class="topbar__container container">
+                <div class="topbar__row">
+                    <div class="topbar__item topbar__item--link">
+                        <a class="topbar-link" href="{% url 'main:about_us' %}">درباره ما</a>
+                    </div>
+                    <div class="topbar__item topbar__item--link">
+                        <a class="topbar-link" href="{% url 'main:contact_us' %}">تماس با ما</a>
+                    </div>
+                    <div class="topbar__spring"></div>
+                    {% if user.is_authenticated %}
+                        <div class="topbar__item">
+                            <div class="topbar-dropdown">
+                                <a class="topbar-link" href="{% url 'accounts:userpanel' %}">
+                                    <i class="fa fa-user"></i>
+                                    پنل کاربری
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="site-header__middle container">
+            <div class="site-header__logo">
+                <a href="{% url 'main:index' %}">
+                    <img src="{% static 'images/logo.svg' %}" alt="بازارک" />
+                </a>
+            </div>
+            <div class="site-header__search">
+                <div class="search search--location--header">
+                    <div class="search__body">
+                        <form class="search__form" method="get" action="{% url 'search:search_view' %}">
+                            <input class="search__input" name="q" placeholder="جستجو در محصولات" aria-label="جستجو" type="text" autocomplete="off" />
+                            <button class="search__button search__button--type--submit" type="submit">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            <div class="search__border"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="site-header__phone">
+                <div class="site-header__phone-title">پشتیبانی</div>
+                <div class="site-header__phone-number ltr_text">081-45231</div>
+            </div>
+        </div>
+        {% include "partials/navbar.html" %}
+    </div>
+</header>

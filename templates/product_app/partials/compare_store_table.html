@@ -1,0 +1,87 @@
+{% load humanize %}
+
+{% if store_products %}
+    <div class="container">
+
+        <h2 style="text-align:center; color:green;">
+            مقایسه کالاها
+        </h2>
+
+        <table class="table table-bordered">
+
+            <tr style="background:#f1f1f1; text-align:center;">
+                <th>
+                    ویژگی
+                </th>
+
+                {% for store_product in store_products %}
+                    <th>
+                        <a href="{{ store_product.get_absolute_url }}">{{ store_product.product.product_name }}</a>
+
+                        <hr>
+
+                        فروشگاه:
+                        {{ store_product.store }}
+
+                        <hr>
+
+                        قیمت:
+                        {{ store_product.price|floatformat:0|intcomma }}
+                        تومان
+
+                        <hr>
+
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            onclick="deleteFromCompareList({{ store_product.id }})"
+                        >
+                            حذف از مقایسه
+                        </button>
+                    </th>
+                {% endfor %}
+            </tr>
+
+            {% for feature in features %}
+                <tr>
+                    <td style="font-size:1.2rem; font-weight:900; width:25%;">
+                        {{ feature }}
+                    </td>
+
+                    {% for store_product in store_products %}
+                        <td style="text-align:center;">
+                            {% for item in store_product.product.product_feature.all %}
+                                {% if item.feature == feature %}
+                                    {{ item.filter_value.value_title|default:item.value }}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+{% else %}
+
+    <div class="container">
+
+        <h2 style="text-align:center; color:green; padding:100px;">
+            کالایی برای مقایسه وجود ندارد
+
+            <br>
+
+            <small style="display:block; margin-top:16px; font-size:1rem; color:#6c757d;">
+                روی آیکون مقایسه (<i class="fas fa-exchange-alt"></i>) در کارت یا صفحه‌ی هر کالا بزنید تا به این لیست اضافه شود.
+            </small>
+
+            <a href="{% url 'products:product_groups' %}" class="btn btn-primary mt-4">
+                مشاهده‌ی دسته‌بندی کالاها
+            </a>
+        </h2>
+
+    </div>
+
+{% endif %}

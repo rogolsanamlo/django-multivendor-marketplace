@@ -1,0 +1,17 @@
+{% load static %}
+
+<script>
+    window.BAZARAK_URLS = {
+        statusOfShopCart: "{% url 'orders:status_of_shop_cart' %}",
+        addToShopCart: "{% url 'orders:add_to_shop_cart' %}",
+        deleteFromShopCart: "{% url 'orders:delete_from_shop_cart' %}",
+        updateShopCart: "{% url 'orders:update_shop_cart' %}",
+        createComment: "{% url 'csf:create_comment' slug='SLUG' %}",
+        addScore: "{% url 'csf:add_score' %}",
+        addToFavorite: "{% url 'csf:add_to_favorite' %}",
+        deleteFromFavorite: "{% url 'csf:delete_from_favorite' %}",
+        addToCompare: "{% url 'products:add_store_product_to_compare' %}",
+        deleteFromCompare: "{% url 'products:delete_store_product_from_compare' %}"
+    };
+</script>
+<script src="{% static 'js/myscript.js' %}"></script>

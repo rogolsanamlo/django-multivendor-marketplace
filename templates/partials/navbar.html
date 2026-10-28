@@ -1,0 +1,83 @@
+{% load static render_partial %}
+<div class="site-header__nav-panel">
+    <div class="nav-panel">
+        <div class="nav-panel__container container">
+            <div class="nav-panel__row">
+                <div class="nav-panel__logo">
+                    <a href="{% url 'main:index' %}">
+                        <img src="{% static 'images/logo.svg' %}" alt="بازارک" />
+                    </a>
+                </div>
+                <div class="nav-panel__nav-links nav-links">
+                    <ul class="nav-links__list">
+                        <li class="nav-links__item">
+                            <a href="{% url 'main:index' %}">
+                                <span><i class="fa fa-home"></i>&nbsp; خانه</span>
+                            </a>
+                        </li>
+                        <li class="nav-links__item nav-links__item--with-submenu">
+                            <a href="{% url 'products:product_groups' %}">
+                                <span>
+                                    دسته‌بندی کالاها
+                                    &nbsp;<i class="fa fa-angle-down"></i>
+                                </span>
+                            </a>
+                            {% render_partial 'products:get_nav_megamenu' %}
+                        </li>
+                        <li class="nav-links__item">
+                            <a href="{% url 'products:compare_store_list' %}">
+                                <span>مقایسه کالاها</span>
+                            </a>
+                        </li>
+                        <li class="nav-links__item nav-links__item--with-submenu">
+                            <a href="#">
+                                <span>
+                                    حساب کاربری
+                                    &nbsp;<i class="fa fa-angle-down"></i>
+                                </span>
+                            </a>
+                            <div class="nav-links__menu">
+                                <ul class="menu menu--layout--classic">
+                                    {% if user.is_authenticated %}
+                                        <li><a href="{% url 'accounts:userpanel' %}">پنل کاربری</a></li>
+                                        {% if request.user.store %}
+                                            <li><a href="{% url 'analytics:seller_dashboard' %}">پنل فروشنده</a></li>
+                                        {% else %}
+                                            <li><a href="{% url 'accounts:create_store' %}">ثبت فروشگاه</a></li>
+                                        {% endif %}
+                                        <li>
+                                            <form method="post" action="{% url 'accounts:logout' %}">
+                                                {% csrf_token %}
+                                                <button type="submit">خروج</button>
+                                            </form>
+                                        </li>
+                                    {% else %}
+                                        <li><a href="{% url 'accounts:login' %}">ورود</a></li>
+                                        <li><a href="{% url 'accounts:register' %}">ثبت نام</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="nav-panel__indicators">
+                    <div class="indicator">
+                        <a href="{% url 'csf:user_favorite' %}" class="indicator__button" title="علاقه‌مندی‌ها">
+                            <span class="indicator__area">
+                                <i class="fa fa-heart"></i>
+                            </span>
+                        </a>
+                    </div>
+                    <div class="indicator">
+                        <a href="{% url 'orders:shop_cart' %}" class="indicator__button" title="سبد خرید">
+                            <span class="indicator__area">
+                                <i class="fa fa-shopping-cart"></i>
+                                <span class="indicator__value" id="indicator__value">0</span>
+                            </span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
