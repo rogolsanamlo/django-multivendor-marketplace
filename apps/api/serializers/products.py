@@ -131,6 +131,22 @@ class StoreProductSerializer(serializers.ModelSerializer):
             "update_date",
         ]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # کالا بعد از ساخت قابل تغییر نیست، پس برای PUT لازم نیست
+        # دوباره فرستاده شود (ارسالش در validate رد می‌شود).
+        if self.instance is not None:
+            self.fields["product"].required = False
+
+    def validate_price(self, value):
+        if value is None or value <= 0:
+            raise serializers.ValidationError(
+                "قیمت باید بیشتر از صفر باشد."
+            )
+
+        return value
+
     def validate(self, attrs):
         if self.instance:
             if "store" in self.initial_data:

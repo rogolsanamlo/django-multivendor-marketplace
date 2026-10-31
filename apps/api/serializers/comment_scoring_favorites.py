@@ -77,9 +77,9 @@ class ScoringSerializer(serializers.ModelSerializer):
         ]
 
     def validate_score(self, value):
-        if value < 0 or value > 5:
+        if value < 1 or value > 5:
             raise serializers.ValidationError(
-                "امتیاز باید بین 0 و 5 باشد."
+                "امتیاز باید بین 1 و 5 باشد."
             )
 
         return value

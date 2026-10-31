@@ -1,14 +1,49 @@
-from rest_framework import generics
+from django.db import transaction
+from django.db.models import Q, Sum
+from rest_framework import generics, serializers
 
+from apps.api.pagination import OptionalPageNumberPagination
 from apps.api.permissions import IsAuthenticatedUser, IsStoreOwner
 from apps.api.serializers.warehouses import (
     WarehouseTypeSerializer,
     WarehouseSerializer,
 )
+from apps.products.models import StoreProduct
 from apps.warehouses.models import (
     WarehouseType,
     Warehouse,
 )
+
+
+def get_stock(store_product):
+    """موجودی فعلی کالا = جمع ردیف‌های ورودی - جمع ردیف‌های خروجی."""
+
+    totals = Warehouse.objects.filter(
+        store_product=store_product
+    ).aggregate(
+        total_in=Sum(
+            "qty",
+            filter=Q(warehouse_type__code=WarehouseType.INPUT),
+        ),
+        total_out=Sum(
+            "qty",
+            filter=Q(warehouse_type__code=WarehouseType.OUTPUT),
+        ),
+    )
+
+    return (totals["total_in"] or 0) - (totals["total_out"] or 0)
+
+
+def owner_warehouses(user):
+
+    return Warehouse.objects.filter(
+        store_product__store__user=user
+    ).select_related(
+        "warehouse_type",
+        "store_product",
+        "store_product__store",
+        "user_registered",
+    )
 
 
 class WarehouseTypeListAPIView(generics.ListAPIView):
@@ -29,36 +64,50 @@ class WarehouseTypeDetailAPIView(generics.RetrieveAPIView):
     ]
 
 
-class WarehouseListCreateAPIView(
-    generics.ListCreateAPIView
-):
+class WarehouseListCreateAPIView(generics.ListCreateAPIView):
 
     serializer_class = WarehouseSerializer
+    pagination_class = OptionalPageNumberPagination
     permission_classes = [
         IsStoreOwner,
     ]
 
     def get_queryset(self):
 
-        return Warehouse.objects.filter(
-            store_product__store__user=self.request.user
-        ).select_related(
-            "warehouse_type",
-            "store_product",
-            "store_product__store",
-            "user_registered",
-        )
+        return owner_warehouses(self.request.user)
 
     def perform_create(self, serializer):
 
-        serializer.save(
-            user_registered=self.request.user
-        )
+        data = serializer.validated_data
+
+        with transaction.atomic():
+            # قفل ردیف کالا تا دو درخواست هم‌زمان خروجی، موجودی را
+            # منفی نکنند.
+            StoreProduct.objects.select_for_update().get(
+                pk=data["store_product"].pk
+            )
+
+            if data["warehouse_type"].code == WarehouseType.OUTPUT:
+                stock = get_stock(data["store_product"])
+
+                if data["qty"] > stock:
+                    raise serializers.ValidationError({
+                        "qty": (
+                            "موجودی کافی نیست. "
+                            f"موجودی فعلی: {stock}"
+                        )
+                    })
+
+            serializer.save(
+                user_registered=self.request.user
+            )
 
 
-class WarehouseDetailAPIView(
-    generics.RetrieveDestroyAPIView
-):
+class WarehouseDetailAPIView(generics.RetrieveAPIView):
+    """
+    دفتر کل انبار فقط خواندنی است؛ ردیف نباید حذف یا ویرایش شود.
+    برای اصلاح موجودی، ردیف ورودی/خروجی جدید ثبت می‌شود.
+    """
 
     serializer_class = WarehouseSerializer
     permission_classes = [
@@ -67,11 +116,4 @@ class WarehouseDetailAPIView(
 
     def get_queryset(self):
 
-        return Warehouse.objects.filter(
-            store_product__store__user=self.request.user
-        ).select_related(
-            "warehouse_type",
-            "store_product",
-            "store_product__store",
-            "user_registered",
-        )
+        return owner_warehouses(self.request.user)

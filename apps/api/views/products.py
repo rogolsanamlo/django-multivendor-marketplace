@@ -1,10 +1,10 @@
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
+from rest_framework import generics
+from rest_framework.permissions import SAFE_METHODS, AllowAny
 
+from apps.api.pagination import OptionalPageNumberPagination
 from apps.api.permissions import (
     IsAuthenticatedUser,
     IsStoreOwner,
@@ -31,50 +31,47 @@ from apps.products.models import (
 )
 
 
-class ProductListAPIView(APIView):
+class LegacyContextMixin:
+    """
+    ویوهای قبلی سریالایزر را بدون ``request`` می‌ساختند؛ برای اینکه
+    خروجی (مثلاً آدرس تصویرها) تغییر نکند همان رفتار حفظ شده است.
+    """
+
+    def get_serializer_context(self):
+        return {}
+
+
+class BaseListAPIView(LegacyContextMixin, generics.ListAPIView):
+    pagination_class = OptionalPageNumberPagination
+
+
+class BaseDetailAPIView(LegacyContextMixin, generics.RetrieveAPIView):
+    pass
+
+
+# ---------------------------------------------------------------- Product
+
+
+class ProductListAPIView(BaseListAPIView):
     permission_classes = [AllowAny]
-
-    def get(self, request):
-        products = Product.objects.filter(
-            is_active=True
-        )
-
-        serializer = ProductSerializer(
-            products,
-            many=True
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
+    serializer_class = ProductSerializer
+    queryset = Product.objects.filter(is_active=True)
 
 
-class ProductDetailAPIView(APIView):
+class ProductDetailAPIView(BaseDetailAPIView):
     permission_classes = [AllowAny]
-
-    def get(self, request, pk):
-        product = get_object_or_404(
-            Product,
-            pk=pk,
-            is_active=True
-        )
-
-        serializer = ProductSerializer(
-            product
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
+    serializer_class = ProductSerializer
+    queryset = Product.objects.filter(is_active=True)
 
 
-class StoreProductListAPIView(APIView):
+# ----------------------------------------------------------- StoreProduct
+
+
+class StoreProductPermissionsMixin:
 
     def get_permissions(self):
 
-        if self.request.method == "GET":
+        if self.request.method in SAFE_METHODS:
             return []
 
         return [
@@ -82,372 +79,124 @@ class StoreProductListAPIView(APIView):
             IsStoreOwner(),
         ]
 
-    def get(self, request):
-        store_products = StoreProduct.objects.filter(
+
+class StoreProductListAPIView(
+    StoreProductPermissionsMixin,
+    generics.ListCreateAPIView,
+):
+    serializer_class = StoreProductSerializer
+    pagination_class = OptionalPageNumberPagination
+
+    def get_queryset(self):
+        return StoreProduct.objects.filter(
             is_active=True,
             store__is_active=True,
-            product__is_active=True
+            product__is_active=True,
         )
 
-        serializer = StoreProductSerializer(
-            store_products,
-            many=True
+    def perform_create(self, serializer):
+        serializer.save(store=self.request.user.store)
+
+
+class StoreProductDetailAPIView(
+    StoreProductPermissionsMixin,
+    generics.RetrieveUpdateDestroyAPIView,
+):
+    serializer_class = StoreProductSerializer
+
+    def get_object(self):
+        store_product = get_object_or_404(
+            StoreProduct.objects.select_related("store", "product"),
+            pk=self.kwargs["pk"],
         )
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
+        is_public = (
+            store_product.is_active
+            and store_product.store.is_active
+            and store_product.product.is_active
         )
 
-    def post(self, request):
-        serializer = StoreProductSerializer(
-            data=request.data,
-            context={
-                "request": request
-            }
-        )
-
-        serializer.is_valid(
-            raise_exception=True
-        )
-
-        store_product = serializer.save(
-            store=request.user.store
-        )
-
-        return Response(
-            StoreProductSerializer(
-                store_product,
-                context={
-                    "request": request
-                }
-            ).data,
-            status=status.HTTP_201_CREATED
-        )
-
-
-class StoreProductDetailAPIView(APIView):
-
-    def get_permissions(self):
-
-        if self.request.method in [
-            "GET",
-            "HEAD",
-            "OPTIONS",
-        ]:
-            return []
-
-        return [
-            IsAuthenticatedUser(),
-            IsStoreOwner(),
-        ]
-
-    def get_object(self, pk):
-        return get_object_or_404(
-            StoreProduct,
-            pk=pk,
-            is_active=True,
-            store__is_active=True,
-            product__is_active=True
-        )
-
-    def get(self, request, pk):
-        store_product = self.get_object(pk)
-
-        serializer = StoreProductSerializer(
-            store_product,
-            context={
-                "request": request
-            }
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
-
-    def put(self, request, pk):
-        store_product = self.get_object(pk)
-
-        self.check_object_permissions(
-            request,
-            store_product
-        )
-
-        serializer = StoreProductSerializer(
-            store_product,
-            data=request.data,
-            context={
-                "request": request
-            }
-        )
-
-        serializer.is_valid(
-            raise_exception=True
-        )
-
-        store_product = serializer.save()
-
-        return Response(
-            StoreProductSerializer(
-                store_product,
-                context={
-                    "request": request
-                }
-            ).data,
-            status=status.HTTP_200_OK
-        )
-
-    def patch(self, request, pk):
-        store_product = self.get_object(pk)
+        if not is_public:
+            # خواندن کالای غیرفعال برای همه 404 است. نوشتن
+            # (PUT/PATCH/DELETE) فقط برای صاحب کالا باز است تا بتواند
+            # کالای غیرفعال خودش را دوباره فعال کند؛ بقیه ۴۰۴ می‌گیرند.
+            is_owner = (
+                store_product.store.user_id == self.request.user.id
+            )
 
-        self.check_object_permissions(
-            request,
-            store_product
-        )
+            if self.request.method in SAFE_METHODS or not is_owner:
+                raise Http404
 
-        serializer = StoreProductSerializer(
-            store_product,
-            data=request.data,
-            partial=True,
-            context={
-                "request": request
-            }
-        )
+        self.check_object_permissions(self.request, store_product)
 
-        serializer.is_valid(
-            raise_exception=True
-        )
+        return store_product
 
-        store_product = serializer.save()
+    def perform_destroy(self, instance):
+        # حذف نرم: ردیف‌های انبار و خط‌های سفارش قدیمی (CASCADE)
+        # دست نمی‌خورند و تاریخچه‌ی فروش حفظ می‌شود.
+        if instance.is_active:
+            instance.is_active = False
+            instance.save(update_fields=["is_active", "update_date"])
 
-        return Response(
-            StoreProductSerializer(
-                store_product,
-                context={
-                    "request": request
-                }
-            ).data,
-            status=status.HTTP_200_OK
-        )
 
-    def delete(self, request, pk):
-        store_product = self.get_object(pk)
+# ------------------------------------------------------- Read-only lists
 
-        self.check_object_permissions(
-            request,
-            store_product
-        )
 
-        store_product.delete()
+class ProductGroupListAPIView(BaseListAPIView):
+    serializer_class = ProductGroupSerializer
+    queryset = ProductGroup.objects.filter(is_active=True)
 
-        return Response(
-            status=status.HTTP_204_NO_CONTENT
-        )
 
+class ProductGroupDetailAPIView(BaseDetailAPIView):
+    serializer_class = ProductGroupSerializer
+    queryset = ProductGroup.objects.filter(is_active=True)
 
-class ProductGroupListAPIView(APIView):
 
-    def get(self, request):
-        groups = ProductGroup.objects.filter(
-            is_active=True
-        )
+class BrandListAPIView(BaseListAPIView):
+    serializer_class = BrandSerializer
+    queryset = Brand.objects.all()
 
-        serializer = ProductGroupSerializer(
-            groups,
-            many=True
-        )
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
+class BrandDetailAPIView(BaseDetailAPIView):
+    serializer_class = BrandSerializer
+    queryset = Brand.objects.all()
 
 
-class ProductGroupDetailAPIView(APIView):
+class FeatureListAPIView(BaseListAPIView):
+    serializer_class = FeatureSerializer
+    queryset = Feature.objects.all()
 
-    def get(self, request, pk):
-        group = get_object_or_404(
-            ProductGroup,
-            pk=pk,
-            is_active=True
-        )
 
-        serializer = ProductGroupSerializer(
-            group
-        )
+class FeatureDetailAPIView(BaseDetailAPIView):
+    serializer_class = FeatureSerializer
+    queryset = Feature.objects.all()
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
 
+class FeatureValueListAPIView(BaseListAPIView):
+    serializer_class = FeatureValueSerializer
+    queryset = FeatureValue.objects.all()
 
-class BrandListAPIView(APIView):
 
-    def get(self, request):
-        brands = Brand.objects.all()
+class FeatureValueDetailAPIView(BaseDetailAPIView):
+    serializer_class = FeatureValueSerializer
+    queryset = FeatureValue.objects.all()
 
-        serializer = BrandSerializer(
-            brands,
-            many=True
-        )
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
+class ProductFeatureListAPIView(BaseListAPIView):
+    serializer_class = ProductFeatureSerializer
+    queryset = ProductFeature.objects.all()
 
 
-class BrandDetailAPIView(APIView):
+class ProductFeatureDetailAPIView(BaseDetailAPIView):
+    serializer_class = ProductFeatureSerializer
+    queryset = ProductFeature.objects.all()
 
-    def get(self, request, pk):
-        brand = get_object_or_404(
-            Brand,
-            pk=pk
-        )
 
-        serializer = BrandSerializer(
-            brand
-        )
+class ProductGalleryListAPIView(BaseListAPIView):
+    serializer_class = ProductGallerySerializer
+    queryset = ProductGallery.objects.all()
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
 
-
-class FeatureListAPIView(APIView):
-
-    def get(self, request):
-        features = Feature.objects.all()
-
-        serializer = FeatureSerializer(
-            features,
-            many=True
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
-
-
-class FeatureDetailAPIView(APIView):
-
-    def get(self, request, pk):
-        feature = get_object_or_404(
-            Feature,
-            pk=pk
-        )
-
-        serializer = FeatureSerializer(
-            feature
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
-
-
-class FeatureValueListAPIView(APIView):
-
-    def get(self, request):
-        values = FeatureValue.objects.all()
-
-        serializer = FeatureValueSerializer(
-            values,
-            many=True
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
-
-
-class FeatureValueDetailAPIView(APIView):
-
-    def get(self, request, pk):
-        value = get_object_or_404(
-            FeatureValue,
-            pk=pk
-        )
-
-        serializer = FeatureValueSerializer(
-            value
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
-
-
-class ProductFeatureListAPIView(APIView):
-
-    def get(self, request):
-        product_features = ProductFeature.objects.all()
-
-        serializer = ProductFeatureSerializer(
-            product_features,
-            many=True
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
-
-
-class ProductFeatureDetailAPIView(APIView):
-
-    def get(self, request, pk):
-        product_feature = get_object_or_404(
-            ProductFeature,
-            pk=pk
-        )
-
-        serializer = ProductFeatureSerializer(
-            product_feature
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
-
-
-class ProductGalleryListAPIView(APIView):
-
-    def get(self, request):
-        galleries = ProductGallery.objects.all()
-
-        serializer = ProductGallerySerializer(
-            galleries,
-            many=True
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
-
-
-class ProductGalleryDetailAPIView(APIView):
-
-    def get(self, request, pk):
-        gallery = get_object_or_404(
-            ProductGallery,
-            pk=pk
-        )
-
-        serializer = ProductGallerySerializer(
-            gallery
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
+class ProductGalleryDetailAPIView(BaseDetailAPIView):
+    serializer_class = ProductGallerySerializer
+    queryset = ProductGallery.objects.all()

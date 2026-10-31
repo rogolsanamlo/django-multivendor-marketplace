@@ -518,10 +518,103 @@ class ProductAPISecurityTest(APITestCase):
             status.HTTP_204_NO_CONTENT
         )
 
+        # حذف نرم: ردیف می‌ماند ولی غیرفعال می‌شود
+        self.store_product.refresh_from_db()
+
         self.assertFalse(
-            StoreProduct.objects.filter(
-                pk=self.store_product.pk
-            ).exists()
+            self.store_product.is_active
+        )
+
+    def test_store_owner_can_reactivate_own_store_product(self):
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        self.client.delete(
+            self.store_product_url
+        )
+
+        response = self.client.patch(
+            self.store_product_url,
+            {
+                "is_active": True
+            }
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.store_product.refresh_from_db()
+
+        self.assertTrue(
+            self.store_product.is_active
+        )
+
+    def test_inactive_store_product_is_hidden_from_public(self):
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        self.client.delete(
+            self.store_product_url
+        )
+
+        self.client.force_authenticate(
+            user=None
+        )
+
+        response = self.client.get(
+            self.store_product_url
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND
+        )
+
+    def test_store_product_price_must_be_positive(self):
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        for bad_price in ("0", "-5"):
+            response = self.client.patch(
+                self.store_product_url,
+                {
+                    "price": bad_price
+                }
+            )
+
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_400_BAD_REQUEST
+            )
+
+        self.store_product.refresh_from_db()
+
+        self.assertEqual(
+            str(self.store_product.price),
+            "40000000.00"
+        )
+
+    def test_store_product_put_without_product_works(self):
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        response = self.client.put(
+            self.store_product_url,
+            {
+                "price": "41000000.00",
+                "is_active": True
+            }
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
         )
 
     def test_store_owner_cannot_change_store(self):
