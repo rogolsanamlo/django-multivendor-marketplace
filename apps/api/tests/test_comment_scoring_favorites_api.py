@@ -610,3 +610,158 @@ class CommentScoringFavoriteAPITest(APITestCase):
             response.status_code,
             status.HTTP_403_FORBIDDEN,
         )
+
+    def test_score_zero_is_rejected(self):
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        response = self.client.post(
+            self.score_list_url,
+            {
+                "store_product": self.store_product.id,
+                "score": 0,
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_score_list_only_shows_own_scores(self):
+        Scoring.objects.create(
+            store_product=self.store_product,
+            scoring_user=self.user,
+            score=4,
+        )
+
+        Scoring.objects.create(
+            store_product=self.store_product,
+            scoring_user=self.other_user,
+            score=2,
+        )
+
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        response = self.client.get(
+            self.score_list_url
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data[0]["scoring_user"],
+            self.user.id,
+        )
+
+    def test_user_cannot_read_other_users_score(self):
+        scoring = Scoring.objects.create(
+            store_product=self.store_product,
+            scoring_user=self.other_user,
+            score=2,
+        )
+
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        response = self.client.get(
+            reverse(
+                "api:scoring-detail",
+                kwargs={"pk": scoring.pk},
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_editing_comment_text_resets_approval(self):
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        comment = Comment.objects.create(
+            store_product=self.store_product,
+            commenting_user=self.user,
+            comment_text="Original",
+            is_active=True,
+        )
+
+        response = self.client.patch(
+            reverse(
+                "api:comment-detail",
+                kwargs={"pk": comment.pk},
+            ),
+            {
+                "comment_text": "Changed text",
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        comment.refresh_from_db()
+
+        self.assertEqual(
+            comment.comment_text,
+            "Changed text",
+        )
+
+        self.assertFalse(comment.is_active)
+        self.assertIsNone(comment.approving_user)
+
+    def test_comment_list_can_filter_by_store_product(self):
+        other_product = Product.objects.create(
+            product_name="Galaxy",
+            brand=self.brand,
+            slug="galaxy",
+            image_name="products/test2.jpg",
+            is_active=True,
+        )
+
+        other_store_product = StoreProduct.objects.create(
+            store=self.store,
+            product=other_product,
+            price=1000,
+            is_active=True,
+        )
+
+        Comment.objects.create(
+            store_product=self.store_product,
+            commenting_user=self.user,
+            comment_text="A",
+            is_active=True,
+        )
+
+        Comment.objects.create(
+            store_product=other_store_product,
+            commenting_user=self.user,
+            comment_text="B",
+            is_active=True,
+        )
+
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        response = self.client.get(
+            self.comment_list_url,
+            {"store_product": self.store_product.id},
+        )
+
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data[0]["comment_text"],
+            "A",
+        )

@@ -1,9 +1,9 @@
-from django.shortcuts import get_object_or_404
-
-from rest_framework import status
+from rest_framework import generics, serializers, status
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
+from apps.api.pagination import OptionalPageNumberPagination
 from apps.api.permissions import IsAuthenticatedUser
 from apps.api.serializers.comment_scoring_favorites import (
     CommentSerializer,
@@ -17,203 +17,146 @@ from apps.comment_scoring_favorites.models import (
 )
 
 
-class CommentListAPIView(APIView):
+def filter_by_store_product(request, queryset):
+    """فیلتر اختیاری ``?store_product=<id>`` روی لیست‌ها."""
 
+    value = request.query_params.get("store_product")
+
+    if value in (None, ""):
+        return queryset
+
+    try:
+        return queryset.filter(store_product_id=int(value))
+    except ValueError:
+        raise serializers.ValidationError({
+            "store_product": "شناسه‌ی کالا باید عدد باشد."
+        })
+
+
+class OwnerOnlyMixin:
+    """
+    فقط صاحب رکورد می‌تواند ویرایش/حذف کند (و در صورت
+    ``read_requires_owner`` حتی بخواند)؛ در غیر این صورت ۴۰۳.
+    """
+
+    owner_field = None
+    read_requires_owner = False
+    read_denied_message = ""
+    edit_denied_message = ""
+    delete_denied_message = ""
+
+    def get_object(self):
+        obj = super().get_object()
+
+        if getattr(obj, self.owner_field) == self.request.user:
+            return obj
+
+        if self.request.method in SAFE_METHODS:
+            if self.read_requires_owner:
+                raise PermissionDenied(self.read_denied_message)
+            return obj
+
+        if self.request.method == "DELETE":
+            raise PermissionDenied(self.delete_denied_message)
+
+        raise PermissionDenied(self.edit_denied_message)
+
+
+# ---------------------------------------------------------------- Comment
+
+
+class CommentListAPIView(generics.ListCreateAPIView):
+
+    serializer_class = CommentSerializer
+    pagination_class = OptionalPageNumberPagination
     permission_classes = [
         IsAuthenticatedUser,
     ]
 
-    def get(self, request):
-        comments = Comment.objects.filter(
-            is_active=True
+    def get_queryset(self):
+        queryset = Comment.objects.filter(
+            is_active=True,
+            store_product__is_active=True,
         ).select_related(
             "store_product",
             "commenting_user",
         )
 
-        serializer = CommentSerializer(
-            comments,
-            many=True,
-        )
+        return filter_by_store_product(self.request, queryset)
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-        )
-
-    def post(self, request):
-        serializer = CommentSerializer(
-            data=request.data
-        )
-
-        serializer.is_valid(
-            raise_exception=True
-        )
-
-        serializer.save(
-            commenting_user=request.user
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_201_CREATED,
-        )
+    def perform_create(self, serializer):
+        serializer.save(commenting_user=self.request.user)
 
 
-class CommentDetailAPIView(APIView):
+class CommentDetailAPIView(
+    OwnerOnlyMixin,
+    generics.RetrieveUpdateDestroyAPIView,
+):
 
+    serializer_class = CommentSerializer
+    queryset = Comment.objects.filter(is_active=True)
     permission_classes = [
         IsAuthenticatedUser,
     ]
 
-    def get_object(self, pk):
-        return get_object_or_404(
-            Comment,
-            pk=pk,
-            is_active=True,
+    owner_field = "commenting_user"
+    edit_denied_message = "شما اجازه ویرایش این نظر را ندارید."
+    delete_denied_message = "شما اجازه حذف این نظر را ندارید."
+
+    def perform_update(self, serializer):
+        instance = serializer.instance
+
+        changed = any(
+            getattr(instance, field) != value
+            for field, value in serializer.validated_data.items()
         )
 
-    def get(self, request, pk):
-        comment = self.get_object(pk)
-
-        serializer = CommentSerializer(
-            comment
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-        )
-
-    def put(self, request, pk):
-        comment = self.get_object(pk)
-
-        if comment.commenting_user != request.user:
-            return Response(
-                {
-                    "detail": (
-                        "شما اجازه ویرایش این نظر را ندارید."
-                    )
-                },
-                status=status.HTTP_403_FORBIDDEN,
+        if changed:
+            # نظر ویرایش‌شده باید دوباره تأیید شود.
+            serializer.save(
+                is_active=False,
+                approving_user=None,
             )
-
-        serializer = CommentSerializer(
-            comment,
-            data=request.data,
-            partial=False,
-        )
-
-        serializer.is_valid(
-            raise_exception=True
-        )
-
-        serializer.save()
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-        )
-
-    def patch(self, request, pk):
-        comment = self.get_object(pk)
-
-        if comment.commenting_user != request.user:
-            return Response(
-                {
-                    "detail": (
-                        "شما اجازه ویرایش این نظر را ندارید."
-                    )
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        serializer = CommentSerializer(
-            comment,
-            data=request.data,
-            partial=True,
-        )
-
-        serializer.is_valid(
-            raise_exception=True
-        )
-
-        serializer.save()
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-        )
-
-    def delete(self, request, pk):
-        comment = self.get_object(pk)
-
-        if comment.commenting_user != request.user:
-            return Response(
-                {
-                    "detail": (
-                        "شما اجازه حذف این نظر را ندارید."
-                    )
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        comment.delete()
-
-        return Response(
-            status=status.HTTP_204_NO_CONTENT,
-        )
+        else:
+            serializer.save()
 
 
-class ScoringListAPIView(APIView):
+# ---------------------------------------------------------------- Scoring
 
+
+class ScoringListAPIView(generics.ListCreateAPIView):
+
+    serializer_class = ScoringSerializer
+    pagination_class = OptionalPageNumberPagination
     permission_classes = [
         IsAuthenticatedUser,
     ]
 
-    def get(self, request):
-        scores = Scoring.objects.all().select_related(
+    def get_queryset(self):
+        # هر کاربر فقط امتیازهای خودش را می‌بیند.
+        queryset = Scoring.objects.filter(
+            scoring_user=self.request.user
+        ).select_related(
             "store_product",
             "scoring_user",
         )
 
-        serializer = ScoringSerializer(
-            scores,
-            many=True,
-        )
+        return filter_by_store_product(self.request, queryset)
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-        )
-
-    def post(self, request):
-        serializer = ScoringSerializer(
-            data=request.data
-        )
-
-        serializer.is_valid(
-            raise_exception=True
-        )
-
-        store_product = serializer.validated_data[
-            "store_product"
-        ]
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         scoring, created = Scoring.objects.update_or_create(
-            store_product=store_product,
+            store_product=serializer.validated_data["store_product"],
             scoring_user=request.user,
             defaults={
                 "score": serializer.validated_data["score"],
             },
         )
 
-        result_serializer = ScoringSerializer(
-            scoring
-        )
-
         return Response(
-            result_serializer.data,
+            self.get_serializer(scoring).data,
             status=(
                 status.HTTP_201_CREATED
                 if created
@@ -222,156 +165,54 @@ class ScoringListAPIView(APIView):
         )
 
 
-class ScoringDetailAPIView(APIView):
+class ScoringDetailAPIView(
+    OwnerOnlyMixin,
+    generics.RetrieveUpdateDestroyAPIView,
+):
 
+    serializer_class = ScoringSerializer
+    queryset = Scoring.objects.all()
     permission_classes = [
         IsAuthenticatedUser,
     ]
 
-    def get_object(self, pk):
-        return get_object_or_404(
-            Scoring,
-            pk=pk,
-        )
-
-    def get(self, request, pk):
-        scoring = self.get_object(pk)
-
-        serializer = ScoringSerializer(
-            scoring
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-        )
-
-    def put(self, request, pk):
-        scoring = self.get_object(pk)
-
-        if scoring.scoring_user != request.user:
-            return Response(
-                {
-                    "detail": (
-                        "شما اجازه ویرایش این امتیاز را ندارید."
-                    )
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        serializer = ScoringSerializer(
-            scoring,
-            data=request.data,
-            partial=False,
-        )
-
-        serializer.is_valid(
-            raise_exception=True
-        )
-
-        serializer.save()
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-        )
-
-    def patch(self, request, pk):
-        scoring = self.get_object(pk)
-
-        if scoring.scoring_user != request.user:
-            return Response(
-                {
-                    "detail": (
-                        "شما اجازه ویرایش این امتیاز را ندارید."
-                    )
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        serializer = ScoringSerializer(
-            scoring,
-            data=request.data,
-            partial=True,
-        )
-
-        serializer.is_valid(
-            raise_exception=True
-        )
-
-        serializer.save()
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-        )
-
-    def delete(self, request, pk):
-        scoring = self.get_object(pk)
-
-        if scoring.scoring_user != request.user:
-            return Response(
-                {
-                    "detail": (
-                        "شما اجازه حذف این امتیاز را ندارید."
-                    )
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        scoring.delete()
-
-        return Response(
-            status=status.HTTP_204_NO_CONTENT,
-        )
+    owner_field = "scoring_user"
+    read_requires_owner = True
+    read_denied_message = "شما اجازه دسترسی به این امتیاز را ندارید."
+    edit_denied_message = "شما اجازه ویرایش این امتیاز را ندارید."
+    delete_denied_message = "شما اجازه حذف این امتیاز را ندارید."
 
 
-class FavoriteListAPIView(APIView):
+# --------------------------------------------------------------- Favorite
 
+
+class FavoriteListAPIView(generics.ListCreateAPIView):
+
+    serializer_class = FavoriteSerializer
+    pagination_class = OptionalPageNumberPagination
     permission_classes = [
         IsAuthenticatedUser,
     ]
 
-    def get(self, request):
-        favorites = Favorite.objects.filter(
-            favorite_user=request.user
+    def get_queryset(self):
+        return Favorite.objects.filter(
+            favorite_user=self.request.user
         ).select_related(
             "store_product",
             "store_product__product",
             "store_product__store",
         )
 
-        serializer = FavoriteSerializer(
-            favorites,
-            many=True,
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-        )
-
-    def post(self, request):
-        serializer = FavoriteSerializer(
-            data=request.data
-        )
-
-        serializer.is_valid(
-            raise_exception=True
-        )
-
-        store_product = serializer.validated_data[
-            "store_product"
-        ]
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         favorite, created = Favorite.objects.get_or_create(
-            store_product=store_product,
+            store_product=serializer.validated_data["store_product"],
             favorite_user=request.user,
         )
 
-        result_serializer = FavoriteSerializer(
-            favorite
-        )
+        data = self.get_serializer(favorite).data
 
         if not created:
             return Response(
@@ -380,68 +221,28 @@ class FavoriteListAPIView(APIView):
                         "این کالا قبلاً در لیست علاقه‌مندی‌ها "
                         "قرار دارد."
                     ),
-                    "data": result_serializer.data,
+                    "data": data,
                 },
                 status=status.HTTP_200_OK,
             )
 
-        return Response(
-            result_serializer.data,
-            status=status.HTTP_201_CREATED,
-        )
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
-class FavoriteDetailAPIView(APIView):
+class FavoriteDetailAPIView(
+    OwnerOnlyMixin,
+    generics.RetrieveDestroyAPIView,
+):
 
+    serializer_class = FavoriteSerializer
+    queryset = Favorite.objects.all()
     permission_classes = [
         IsAuthenticatedUser,
     ]
 
-    def get_object(self, pk):
-        return get_object_or_404(
-            Favorite,
-            pk=pk,
-        )
-
-    def get(self, request, pk):
-        favorite = self.get_object(pk)
-
-        if favorite.favorite_user != request.user:
-            return Response(
-                {
-                    "detail": (
-                        "شما اجازه دسترسی به این "
-                        "علاقه‌مندی را ندارید."
-                    )
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        serializer = FavoriteSerializer(
-            favorite
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-        )
-
-    def delete(self, request, pk):
-        favorite = self.get_object(pk)
-
-        if favorite.favorite_user != request.user:
-            return Response(
-                {
-                    "detail": (
-                        "شما اجازه حذف این علاقه‌مندی "
-                        "را ندارید."
-                    )
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        favorite.delete()
-
-        return Response(
-            status=status.HTTP_204_NO_CONTENT,
-        )
+    owner_field = "favorite_user"
+    read_requires_owner = True
+    read_denied_message = (
+        "شما اجازه دسترسی به این علاقه‌مندی را ندارید."
+    )
+    delete_denied_message = "شما اجازه حذف این علاقه‌مندی را ندارید."

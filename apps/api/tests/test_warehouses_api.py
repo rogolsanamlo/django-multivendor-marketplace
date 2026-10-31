@@ -466,7 +466,7 @@ class WarehouseAPITests(APITestCase):
             status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
-    def test_store_owner_can_delete_own_warehouse(self):
+    def test_warehouse_api_does_not_allow_delete(self):
 
         self.client.force_authenticate(
             user=self.user
@@ -483,10 +483,10 @@ class WarehouseAPITests(APITestCase):
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_204_NO_CONTENT,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
-        self.assertFalse(
+        self.assertTrue(
             Warehouse.objects.filter(
                 pk=self.warehouse.id
             ).exists()
@@ -509,7 +509,92 @@ class WarehouseAPITests(APITestCase):
 
         response = self.client.delete(url)
 
+        self.assertIn(
+            response.status_code,
+            (
+                status.HTTP_404_NOT_FOUND,
+                status.HTTP_405_METHOD_NOT_ALLOWED,
+            ),
+        )
+
+        self.assertTrue(
+            Warehouse.objects.filter(
+                pk=self.other_warehouse.id
+            ).exists()
+        )
+
+    def post_row(self, warehouse_type, qty):
+
+        return self.client.post(
+            reverse("api:warehouse-list"),
+            {
+                "warehouse_type": warehouse_type.id,
+                "store_product": self.store_product.id,
+                "qty": qty,
+                "price": 100000,
+            },
+            format="json",
+        )
+
+    def test_output_more_than_stock_is_rejected(self):
+
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        # موجودی فعلی ۱۰ است (ردیف ورودی setUp)
+        response = self.post_row(self.output_type, 11)
+
         self.assertEqual(
             response.status_code,
-            status.HTTP_404_NOT_FOUND,
+            status.HTTP_400_BAD_REQUEST,
         )
+
+        self.assertIn("qty", response.data)
+
+        self.assertEqual(
+            Warehouse.objects.filter(
+                store_product=self.store_product
+            ).count(),
+            1,
+        )
+
+    def test_output_up_to_stock_is_accepted(self):
+
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        response = self.post_row(self.output_type, 10)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        # موجودی صفر شده، پس خروجی بعدی رد می‌شود
+        response = self.post_row(self.output_type, 1)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_warehouse_list_supports_optional_pagination(self):
+
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        response = self.client.get(
+            reverse("api:warehouse-list"),
+            {"page": 1, "page_size": 1},
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(len(response.data["results"]), 1)
