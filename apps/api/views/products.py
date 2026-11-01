@@ -33,10 +33,9 @@ from apps.products.models import (
 
 class LegacyContextMixin:
     """
-    ویوهای قبلی سریالایزر را بدون ``request`` می‌ساختند؛ برای اینکه
-    خروجی (مثلاً آدرس تصویرها) تغییر نکند همان رفتار حفظ شده است.
+    Legacy views created serializers without request context.
+    Keep the same behavior to avoid changing the API response.
     """
-
     def get_serializer_context(self):
         return {}
 
@@ -48,8 +47,6 @@ class BaseListAPIView(LegacyContextMixin, generics.ListAPIView):
 class BaseDetailAPIView(LegacyContextMixin, generics.RetrieveAPIView):
     pass
 
-
-# ---------------------------------------------------------------- Product
 
 
 class ProductListAPIView(BaseListAPIView):
@@ -63,8 +60,6 @@ class ProductDetailAPIView(BaseDetailAPIView):
     serializer_class = ProductSerializer
     queryset = Product.objects.filter(is_active=True)
 
-
-# ----------------------------------------------------------- StoreProduct
 
 
 class StoreProductPermissionsMixin:
@@ -116,10 +111,9 @@ class StoreProductDetailAPIView(
             and store_product.product.is_active
         )
 
+        # Inactive products are hidden from public users.
+        # Only the owner can access an inactive product to reactivate it.
         if not is_public:
-            # خواندن کالای غیرفعال برای همه 404 است. نوشتن
-            # (PUT/PATCH/DELETE) فقط برای صاحب کالا باز است تا بتواند
-            # کالای غیرفعال خودش را دوباره فعال کند؛ بقیه ۴۰۴ می‌گیرند.
             is_owner = (
                 store_product.store.user_id == self.request.user.id
             )
@@ -132,14 +126,11 @@ class StoreProductDetailAPIView(
         return store_product
 
     def perform_destroy(self, instance):
-        # حذف نرم: ردیف‌های انبار و خط‌های سفارش قدیمی (CASCADE)
-        # دست نمی‌خورند و تاریخچه‌ی فروش حفظ می‌شود.
+        # Soft delete preserves warehouse records and historical order details.
         if instance.is_active:
             instance.is_active = False
             instance.save(update_fields=["is_active", "update_date"])
 
-
-# ------------------------------------------------------- Read-only lists
 
 
 class ProductGroupListAPIView(BaseListAPIView):

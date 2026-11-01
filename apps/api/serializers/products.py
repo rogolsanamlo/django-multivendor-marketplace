@@ -133,9 +133,8 @@ class StoreProductSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # کالا بعد از ساخت قابل تغییر نیست، پس برای PUT لازم نیست
-        # دوباره فرستاده شود (ارسالش در validate رد می‌شود).
+        # The product cannot be changed after creation,
+        # so it is not required again for PUT requests.
         if self.instance is not None:
             self.fields["product"].required = False
 
@@ -151,12 +150,12 @@ class StoreProductSerializer(serializers.ModelSerializer):
         if self.instance:
             if "store" in self.initial_data:
                 raise serializers.ValidationError({
-                    "store": "Store cannot be changed."
+                    "store": "فروشگاه قابل تغییر نیست."
                 })
 
             if "product" in self.initial_data:
                 raise serializers.ValidationError({
-                    "product": "Product cannot be changed."
+                    "product": "کالا قابل تغییر نیست."
                 })
 
         return attrs
