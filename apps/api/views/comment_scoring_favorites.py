@@ -16,9 +16,8 @@ from apps.comment_scoring_favorites.models import (
     Scoring,
 )
 
-
 def filter_by_store_product(request, queryset):
-    """فیلتر اختیاری ``?store_product=<id>`` روی لیست‌ها."""
+    """Optionally filter the queryset by store_product ID."""
 
     value = request.query_params.get("store_product")
 
@@ -35,10 +34,9 @@ def filter_by_store_product(request, queryset):
 
 class OwnerOnlyMixin:
     """
-    فقط صاحب رکورد می‌تواند ویرایش/حذف کند (و در صورت
-    ``read_requires_owner`` حتی بخواند)؛ در غیر این صورت ۴۰۳.
+    Only the record owner can update or delete the record.
+    Reading can also be restricted to the owner when read_requires_owner is True.
     """
-
     owner_field = None
     read_requires_owner = False
     read_denied_message = ""
@@ -112,7 +110,7 @@ class CommentDetailAPIView(
         )
 
         if changed:
-            # نظر ویرایش‌شده باید دوباره تأیید شود.
+            # An edited comment must be approved again.
             serializer.save(
                 is_active=False,
                 approving_user=None,
@@ -133,7 +131,7 @@ class ScoringListAPIView(generics.ListCreateAPIView):
     ]
 
     def get_queryset(self):
-        # هر کاربر فقط امتیازهای خودش را می‌بیند.
+        # Each user can only see their own scores.
         queryset = Scoring.objects.filter(
             scoring_user=self.request.user
         ).select_related(
