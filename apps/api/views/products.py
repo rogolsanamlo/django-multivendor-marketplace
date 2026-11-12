@@ -34,7 +34,8 @@ from apps.products.models import (
 class LegacyContextMixin:
     """
     Legacy views created serializers without request context.
-    Keep the same behavior to avoid changing the API response.
+    This preserves the existing behavior and prevents changes
+    to the API response, such as image URLs.
     """
     def get_serializer_context(self):
         return {}
@@ -59,7 +60,6 @@ class ProductDetailAPIView(BaseDetailAPIView):
     permission_classes = [AllowAny]
     serializer_class = ProductSerializer
     queryset = Product.objects.filter(is_active=True)
-
 
 
 class StoreProductPermissionsMixin:
@@ -110,10 +110,12 @@ class StoreProductDetailAPIView(
             and store_product.store.is_active
             and store_product.product.is_active
         )
-
-        # Inactive products are hidden from public users.
-        # Only the owner can access an inactive product to reactivate it.
+       
         if not is_public:
+            # Inactive products return 404 for public users.
+            # Only the owner can access an inactive product through
+            # PUT, PATCH, or DELETE to reactivate or manage it.
+            # Other users receive a 404 response.
             is_owner = (
                 store_product.store.user_id == self.request.user.id
             )
@@ -127,6 +129,7 @@ class StoreProductDetailAPIView(
 
     def perform_destroy(self, instance):
         # Soft delete preserves warehouse records and historical order details.
+        # The product is deactivated instead of being permanently deleted.
         if instance.is_active:
             instance.is_active = False
             instance.save(update_fields=["is_active", "update_date"])

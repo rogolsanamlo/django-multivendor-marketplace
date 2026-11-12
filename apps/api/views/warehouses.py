@@ -16,7 +16,6 @@ from apps.warehouses.models import (
 
 def get_stock(store_product):
     """Current stock = total incoming quantity - total outgoing quantity."""
-
     totals = Warehouse.objects.filter(
         store_product=store_product
     ).aggregate(
@@ -104,10 +103,9 @@ class WarehouseListCreateAPIView(generics.ListCreateAPIView):
 
 class WarehouseDetailAPIView(generics.RetrieveAPIView):
     """
-    Warehouse records are read-only.
-    To correct stock, create a new incoming or outgoing record.
+    Warehouse records are read-only and cannot be updated or deleted.
+    To correct the stock, create a new incoming or outgoing record.
     """
-
     serializer_class = WarehouseSerializer
     permission_classes = [
         IsStoreOwner,

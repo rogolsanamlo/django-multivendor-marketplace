@@ -17,8 +17,7 @@ from apps.comment_scoring_favorites.models import (
 )
 
 def filter_by_store_product(request, queryset):
-    """Optionally filter the queryset by store_product ID."""
-
+    """Optionally filter list results by store_product ID."""
     value = request.query_params.get("store_product")
 
     if value in (None, ""):
@@ -35,7 +34,8 @@ def filter_by_store_product(request, queryset):
 class OwnerOnlyMixin:
     """
     Only the record owner can update or delete the record.
-    Reading can also be restricted to the owner when read_requires_owner is True.
+    If read_requires_owner is True, only the owner can read it as well.
+    Otherwise, access is denied with HTTP 403.
     """
     owner_field = None
     read_requires_owner = False
@@ -117,7 +117,6 @@ class CommentDetailAPIView(
             )
         else:
             serializer.save()
-
 
 # ---------------------------------------------------------------- Scoring
 

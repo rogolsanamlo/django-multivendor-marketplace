@@ -332,7 +332,7 @@ def get_last_7_days_sales(store):
     return result
 
 
-def get_new_customers_this_month(store):
+def get_active_customers_this_month(store):
 
     today = timezone.now()
 

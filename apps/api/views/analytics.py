@@ -13,7 +13,7 @@ from apps.analytics.services import (
     get_last_orders,
     get_low_stock_products,
     get_monthly_income,
-    get_new_customers_this_month,
+    get_active_customers_this_month,
     get_orders_count,
     get_products_without_sales,
     get_store_profit,
@@ -64,8 +64,8 @@ class AnalyticsDashboardAPIView(APIView):
             "available_products_count": (
                 get_available_products_count(store)
             ),
-            "new_customers_this_month": (
-                get_new_customers_this_month(store)
+            "active_customers_this_month": (
+                get_active_customers_this_month(store)
             ),
             "average_order_amount": (
                 get_average_order_amount(store)
