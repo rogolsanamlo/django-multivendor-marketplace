@@ -16,10 +16,8 @@ from apps.comment_scoring_favorites.models import (
     Scoring,
 )
 
-
 def filter_by_store_product(request, queryset):
     """Optionally filter list results by store_product ID."""
-
     value = request.query_params.get("store_product")
 
     if value in (None, ""):

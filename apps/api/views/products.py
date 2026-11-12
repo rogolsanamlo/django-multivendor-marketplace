@@ -110,7 +110,7 @@ class StoreProductDetailAPIView(
             and store_product.store.is_active
             and store_product.product.is_active
         )
-
+       
         if not is_public:
             # Inactive products return 404 for public users.
             # Only the owner can access an inactive product through

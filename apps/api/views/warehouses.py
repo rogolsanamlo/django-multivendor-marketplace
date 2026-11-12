@@ -14,7 +14,6 @@ from apps.warehouses.models import (
     Warehouse,
 )
 
-
 def get_stock(store_product):
     """Current stock = total incoming quantity - total outgoing quantity."""
     totals = Warehouse.objects.filter(
