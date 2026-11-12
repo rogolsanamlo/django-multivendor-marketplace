@@ -16,8 +16,7 @@ from apps.warehouses.models import (
 
 
 def get_stock(store_product):
-    """موجودی فعلی کالا = جمع ردیف‌های ورودی - جمع ردیف‌های خروجی."""
-
+    """Current stock = total incoming quantity - total outgoing quantity."""
     totals = Warehouse.objects.filter(
         store_product=store_product
     ).aggregate(
@@ -81,8 +80,8 @@ class WarehouseListCreateAPIView(generics.ListCreateAPIView):
         data = serializer.validated_data
 
         with transaction.atomic():
-            # قفل ردیف کالا تا دو درخواست هم‌زمان خروجی، موجودی را
-            # منفی نکنند.
+            # Lock the product row to prevent concurrent outgoing transactions
+            # from reducing the stock below zero.
             StoreProduct.objects.select_for_update().get(
                 pk=data["store_product"].pk
             )
@@ -105,10 +104,9 @@ class WarehouseListCreateAPIView(generics.ListCreateAPIView):
 
 class WarehouseDetailAPIView(generics.RetrieveAPIView):
     """
-    دفتر کل انبار فقط خواندنی است؛ ردیف نباید حذف یا ویرایش شود.
-    برای اصلاح موجودی، ردیف ورودی/خروجی جدید ثبت می‌شود.
+    Warehouse records are read-only and cannot be updated or deleted.
+    To correct the stock, create a new incoming or outgoing record.
     """
-
     serializer_class = WarehouseSerializer
     permission_classes = [
         IsStoreOwner,

@@ -17,8 +17,9 @@ class FileUpload:
     migrations. Using a bound method as ``upload_to`` makes ``makemigrations``
     detect a "new" change on every run.
 
-    کلاس کمکی برای ساخت مسیر آپلود فایل‌ها؛ منطق مسیردهی در یک جا متمرکز
-    می‌شود و با تغییر storage (مثلاً S3) نیازی به تغییر مدل‌ها نیست.
+    Helper class for generating file upload paths.
+    Centralizes upload path logic so changing the storage backend
+    (e.g. to S3) does not require modifying models.
     """
 
     def __init__(self, dir, prefix):

@@ -30,7 +30,7 @@ class WarehouseType(models.Model):
         return self.warehouse_type_title
 
     class Meta:
-        verbose_name = 'انبار'
+        verbose_name = 'نوع انبار'
         verbose_name_plural = 'انواع انبار'
 
 

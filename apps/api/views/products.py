@@ -33,10 +33,10 @@ from apps.products.models import (
 
 class LegacyContextMixin:
     """
-    ویوهای قبلی سریالایزر را بدون ``request`` می‌ساختند؛ برای اینکه
-    خروجی (مثلاً آدرس تصویرها) تغییر نکند همان رفتار حفظ شده است.
+    Legacy views created serializers without request context.
+    This preserves the existing behavior and prevents changes
+    to the API response, such as image URLs.
     """
-
     def get_serializer_context(self):
         return {}
 
@@ -49,8 +49,6 @@ class BaseDetailAPIView(LegacyContextMixin, generics.RetrieveAPIView):
     pass
 
 
-# ---------------------------------------------------------------- Product
-
 
 class ProductListAPIView(BaseListAPIView):
     permission_classes = [AllowAny]
@@ -62,9 +60,6 @@ class ProductDetailAPIView(BaseDetailAPIView):
     permission_classes = [AllowAny]
     serializer_class = ProductSerializer
     queryset = Product.objects.filter(is_active=True)
-
-
-# ----------------------------------------------------------- StoreProduct
 
 
 class StoreProductPermissionsMixin:
@@ -117,9 +112,10 @@ class StoreProductDetailAPIView(
         )
 
         if not is_public:
-            # خواندن کالای غیرفعال برای همه 404 است. نوشتن
-            # (PUT/PATCH/DELETE) فقط برای صاحب کالا باز است تا بتواند
-            # کالای غیرفعال خودش را دوباره فعال کند؛ بقیه ۴۰۴ می‌گیرند.
+            # Inactive products return 404 for public users.
+            # Only the owner can access an inactive product through
+            # PUT, PATCH, or DELETE to reactivate or manage it.
+            # Other users receive a 404 response.
             is_owner = (
                 store_product.store.user_id == self.request.user.id
             )
@@ -132,14 +128,12 @@ class StoreProductDetailAPIView(
         return store_product
 
     def perform_destroy(self, instance):
-        # حذف نرم: ردیف‌های انبار و خط‌های سفارش قدیمی (CASCADE)
-        # دست نمی‌خورند و تاریخچه‌ی فروش حفظ می‌شود.
+        # Soft delete preserves warehouse records and historical order details.
+        # The product is deactivated instead of being permanently deleted.
         if instance.is_active:
             instance.is_active = False
             instance.save(update_fields=["is_active", "update_date"])
 
-
-# ------------------------------------------------------- Read-only lists
 
 
 class ProductGroupListAPIView(BaseListAPIView):

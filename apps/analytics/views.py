@@ -28,7 +28,7 @@ from .services import (
     get_last_orders,
     get_low_stock_products,
     get_monthly_income,
-    get_new_customers_this_month,
+    get_active_customers_this_month,
     get_orders_count,
     get_products_without_sales,
     get_store_profit,
@@ -169,8 +169,8 @@ class SellerAnalyticsDashboardView(
             store
         )
 
-        new_customers = (
-            get_new_customers_this_month(store)
+        active_customers = (
+            get_active_customers_this_month(store)
         )
 
         average_order = (
@@ -222,7 +222,7 @@ class SellerAnalyticsDashboardView(
             "week_values": json.dumps(
                 week_values
             ),
-            "new_customers": new_customers,
+            "active_customers": active_customers,
             "average_order": average_order,
         }
 
